@@ -135,3 +135,11 @@ Slot machines (especially digital) use meta-progression systems to retain and ho
 
 Research collected and synthesized by **Siddharth** from the team's Miro board raw research session (April 20, 2026). Covered: game mechanics, RNG/legality, special features, symbol types, meta systems, visual/audio design, and behavioral psychology underpinning slot machine engagement.
 
+## 9. Research Contributions Roster
+| Name | Your research contribution |
+|---|---|
+| Diana | Researched meta systems and commonly used retention strategies |
+| [Name] | [What you researched] |
+| [Name] | [What you researched] |
+| [Name] | [What you researched] |
+| [Name] | [What you researched] |
