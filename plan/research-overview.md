@@ -140,6 +140,7 @@ Research collected and synthesized by **Siddharth** from the team's Miro board r
 |---|---|
 | Diana | Researched meta systems and commonly used retention strategies |
 | Arjun | Review of core game mechanics and statistical methods used in industry to maximise profit |
+| Ryan  | Reviewed common themes of slot machines and wireframes |
 | [Name] | [What you researched] |
 | [Name] | [What you researched] |
 | [Name] | [What you researched] |
