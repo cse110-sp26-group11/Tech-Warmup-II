@@ -118,11 +118,75 @@ const balanceEl = document.getElementById('current-balance');
 const spinBtn = document.getElementById('spin-button');
 const betInput = document.getElementById('bet-amount');
 const messageEl = document.getElementById('message-display');
+const celebrationOverlay = document.getElementById('celebration-overlay');
+const confettiCanvas = document.getElementById('confetti-canvas');
 const reels = [
     document.getElementById('reel-0'),
     document.getElementById('reel-1'),
     document.getElementById('reel-2')
 ];
+
+// --- Visual Effects Logic ---
+
+/**
+ * Triggers a lightweight confetti celebration effect.
+ * @description Creates particles on a canvas that fall and fade.
+ */
+function triggerCelebration() {
+    celebrationOverlay.classList.remove('hidden');
+    const ctx = confettiCanvas.getContext('2d');
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+
+    const particles = [];
+    const colors = ['#FFD700', '#D32F2F', '#FFFFFF', '#1976D2'];
+
+    for (let i = 0; i < 150; i++) {
+        particles.push({
+            x: Math.random() * confettiCanvas.width,
+            y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+            size: Math.random() * 10 + 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speed: Math.random() * 3 + 2,
+            angle: Math.random() * 360
+        });
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+            p.y += p.speed;
+            p.angle += 1;
+            if (p.y < confettiCanvas.height) {
+                active = true;
+                ctx.fillStyle = p.color;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle * Math.PI / 180);
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+            }
+        });
+
+        if (active) {
+            requestAnimationFrame(animate);
+        } else {
+            celebrationOverlay.classList.add('hidden');
+        }
+    }
+
+    // Audio Placeholder: Trigger Big Win Sound
+    // document.getElementById('sound-big-win')?.play();
+
+    animate();
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        celebrationOverlay.classList.add('hidden');
+    }, 3000);
+}
 
 /**
  * Updates the UI with the latest game state.
@@ -139,6 +203,12 @@ function updateUI(state) {
     if (state.winAmount > 0) {
         messageEl.textContent = `WIN: ${state.winAmount} COINS!`;
         messageEl.style.color = 'var(--color-gold)';
+        
+        // Trigger celebration for any win
+        triggerCelebration();
+
+        // Audio Placeholder: Trigger Win Sound
+        // document.getElementById('sound-win')?.play();
     } else {
         messageEl.textContent = 'Try Again!';
         messageEl.style.color = 'var(--color-white)';
@@ -155,10 +225,32 @@ spinBtn.addEventListener('click', () => {
     const bet = parseInt(betInput.value);
     
     try {
-        const result = gameController.playSpin(bet);
-        updateUI(result);
+        // Validation check before starting animation
+        if (wallet.getBalance() < bet) throw new Error('Insufficient balance');
+
+        // Disable button and start animation
+        spinBtn.disabled = true;
+        messageEl.textContent = 'Spinning...';
+        
+        // Audio Placeholder: Trigger Spin Sound
+        // document.getElementById('sound-spin')?.play();
+
+        reels.forEach(reel => reel.classList.add('spinning'));
+
+        // Delay the result reveal to match the animation (1.5 seconds)
+        setTimeout(() => {
+            const result = gameController.playSpin(bet);
+            
+            // Stop animation
+            reels.forEach(reel => reel.classList.remove('spinning'));
+            
+            updateUI(result);
+            spinBtn.disabled = false;
+        }, 1500);
+
     } catch (error) {
         messageEl.textContent = error.message;
         messageEl.style.color = 'var(--color-red)';
+        spinBtn.disabled = false;
     }
 });
