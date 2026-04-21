@@ -3,6 +3,8 @@
  * @description Orchestrator for the Slot Machine game systems.
  */
 
+const { BankruptcyRescue } = require('../meta/rescue');
+
 /**
  * @class GameController
  * @description Coordinates the SlotEngine, Wallet, and Leveling systems.
@@ -17,11 +19,29 @@ class GameController {
     this.engine = engine;
     this.wallet = wallet;
     this.leveling = leveling;
+    this.rescue = new BankruptcyRescue();
+  }
+
+  /**
+   * Checks if the player is eligible for rescue funds.
+   * @returns {boolean}
+   */
+  isEligibleForRescue() {
+    return this.rescue.isEligible(this.wallet);
+  }
+
+  /**
+   * Claims rescue funds for the player.
+   * @returns {number} The amount granted.
+   * @throws {Error} If ineligible.
+   */
+  claimRescueFunds() {
+    return this.rescue.claimBonus(this.wallet);
   }
 
   /**
    * Executes a full game round (spin).
-   * 
+...
    * @param {number} betAmount - The amount of coins to wager.
    * @returns {Object} The consolidated result of the spin.
    * @throws {Error} If balance is insufficient or bet amount is invalid.

@@ -206,6 +206,28 @@ main {
     cursor: not-allowed;
 }
 
+.btn-rescue {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+    border: none;
+    padding: 10px 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 4px 0 #B8860B;
+}
+
+.btn-rescue:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #B8860B;
+}
+
+.btn-rescue.hidden {
+    display: none;
+}
+
 .message-display {
     font-size: 1.5rem;
     color: var(--color-gold);

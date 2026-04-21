@@ -75,6 +75,14 @@ class GameController {
         this.wallet = wallet;
         this.leveling = leveling;
     }
+    isEligibleForRescue() {
+        return this.wallet.getBalance() < 10;
+    }
+    claimRescueFunds() {
+        if (!this.isEligibleForRescue()) throw new Error('Balance must be below 10 coins to claim rescue funds');
+        this.wallet.addCoins(500);
+        return 500;
+    }
     playSpin(betAmount) {
         this.wallet.deductCoins(betAmount);
         const spinResult = this.engine.spin();
@@ -116,6 +124,7 @@ const gameController = new GameController(engine, wallet, leveling);
 const levelEl = document.getElementById('current-level');
 const balanceEl = document.getElementById('current-balance');
 const spinBtn = document.getElementById('spin-button');
+const rescueBtn = document.getElementById('rescue-button');
 const betInput = document.getElementById('bet-amount');
 const messageEl = document.getElementById('message-display');
 const celebrationOverlay = document.getElementById('celebration-overlay');
@@ -196,26 +205,30 @@ function updateUI(state) {
     balanceEl.textContent = state.newBalance;
     levelEl.textContent = state.level;
     
-    state.symbols.forEach((symbol, i) => {
-        reels[i].textContent = symbol;
-    });
-
-    if (state.winAmount > 0) {
-        messageEl.textContent = `WIN: ${state.winAmount} COINS!`;
-        messageEl.style.color = 'var(--color-gold)';
-        
-        // Trigger celebration for any win
-        triggerCelebration();
-
-        // Audio Placeholder: Trigger Win Sound
-        // document.getElementById('sound-win')?.play();
+    // Toggle Rescue Button visibility
+    if (gameController.isEligibleForRescue()) {
+        rescueBtn.classList.remove('hidden');
     } else {
-        messageEl.textContent = 'Try Again!';
-        messageEl.style.color = 'var(--color-white)';
+        rescueBtn.classList.add('hidden');
     }
 
-    if (state.leveledUp) {
-        messageEl.textContent += ` LEVEL UP! Reached Level ${state.level}!`;
+    if (state.symbols) {
+        state.symbols.forEach((symbol, i) => {
+            reels[i].textContent = symbol;
+        });
+
+        if (state.winAmount > 0) {
+            messageEl.textContent = `WIN: ${state.winAmount} COINS!`;
+            messageEl.style.color = 'var(--color-gold)';
+            triggerCelebration();
+        } else {
+            messageEl.textContent = 'Try Again!';
+            messageEl.style.color = 'var(--color-white)';
+        }
+
+        if (state.leveledUp) {
+            messageEl.textContent += ` LEVEL UP! Reached Level ${state.level}!`;
+        }
     }
 }
 
@@ -226,15 +239,18 @@ spinBtn.addEventListener('click', () => {
     
     try {
         // Validation check before starting animation
-        if (wallet.getBalance() < bet) throw new Error('Insufficient balance');
+        if (wallet.getBalance() < bet) {
+            // Check for rescue eligibility immediately
+            if (gameController.isEligibleForRescue()) {
+                rescueBtn.classList.remove('hidden');
+            }
+            throw new Error('Insufficient balance');
+        }
 
         // Disable button and start animation
         spinBtn.disabled = true;
         messageEl.textContent = 'Spinning...';
         
-        // Audio Placeholder: Trigger Spin Sound
-        // document.getElementById('sound-spin')?.play();
-
         reels.forEach(reel => reel.classList.add('spinning'));
 
         // Delay the result reveal to match the animation (1.5 seconds)
@@ -252,5 +268,25 @@ spinBtn.addEventListener('click', () => {
         messageEl.textContent = error.message;
         messageEl.style.color = 'var(--color-red)';
         spinBtn.disabled = false;
+    }
+});
+
+rescueBtn.addEventListener('click', () => {
+    try {
+        const amount = gameController.claimRescueFunds();
+        messageEl.textContent = `RESCUE GRANTED: ${amount} COINS!`;
+        messageEl.style.color = 'var(--color-gold)';
+        
+        // Update UI state
+        updateUI({
+            newBalance: wallet.getBalance(),
+            level: leveling.getLevel()
+        });
+        
+        // Visual feedback
+        triggerCelebration();
+    } catch (error) {
+        messageEl.textContent = error.message;
+        messageEl.style.color = 'var(--color-red)';
     }
 });
