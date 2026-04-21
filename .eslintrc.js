@@ -11,6 +11,8 @@ module.exports = {
   },
   rules: {
     'no-var': 'error',
+    'prefer-const': 'error',
+    'semi': ['error', 'always'],
     'eqeqeq': 'error',
     'no-console': ['error', { allow: ['warn', 'error'] }],
     'max-len': ['error', { code: 100 }]
