@@ -69,41 +69,41 @@ Chuck passed his stats class and understands probabilites, and he has made peace
 
 ---
 
-# 🧩 User Stories
+# User Stories
 
-## Core Gameplay
+## Gameplay
 
-### 1. Spin Experience
+### 1. Spinning
 As a casual player, I want to quickly spin and see results with exciting animations so that I feel entertained even in short sessions.
 
 ### 2. Winning Feedback
-As a player, I want wins to feel rewarding through sound and visuals so that I stay engaged and motivated to keep playing.
+As a casual player, I want to feel rewarded when I win. This could be due to exciting visuals and sounds cues to keep me motivated and stay playing.
 
 ---
 
-## Features & Mechanics
+## Features
 
-### 3. Bonus Features Engagement
-As a player, I want features like free spins, wilds, and bonus rounds so that gameplay feels dynamic and not repetitive.
+### 3. Bonus Features 
+As a frequent casual player, I want features like bonus spins, special events, and wild slots to keep the game fresh. 
 
 ### 4. Control & Interaction
-As a player, I want the option to use auto-spin or manually stop reels so that I feel a sense of control over gameplay.
+As a casual player, I want to be able to use the auto spin feature to avoid thinking too hard, but I also want to control when I stop. 
 
 ---
 
-## Meta Systems & Retention
+## Retention
 
 ### 5. Daily Rewards System
-As a returning player, I want daily login rewards and streak bonuses so that I feel incentivized to come back regularly.
+As a frequent player, I want daily login rewards and streaks so I am motivated to come back an play every day
 
 ---
 
-## Advanced / Optional User Stories
+## Advanced Players
 
-### 6. Transparency for Advanced Players
-As a strategic player, I want access to RTP and volatility information so that I can make informed decisions about which games to play.
+### 6. Transparency
+As a strategic advanced player, I want access to the odds and knowledge of payouts as well as volatility, so I can make informed decisions about what games to play.
 
-### 7. Event Participation
-As a player, I want time-limited events and missions so that I feel a sense of progression and urgency.
+### 7. Events
+As a frequent advanced player, I want special events and limited time missions so I feel a sense of urgency and progression.
 
 ---
