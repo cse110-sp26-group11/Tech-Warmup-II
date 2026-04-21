@@ -40,6 +40,7 @@ test.describe('Social Casino UI Foundation', () => {
     await page.click('#spin-button');
     
     await expect(page.locator('#message-display')).toContainText('Insufficient balance');
-    await expect(page.locator('#message-display')).toHaveCSS('color', 'rgb(211, 47, 47)'); // Red color
+    await expect(page.locator('#message-display'))
+      .toHaveCSS('color', 'rgb(211, 47, 47)'); // Red color
   });
 });
