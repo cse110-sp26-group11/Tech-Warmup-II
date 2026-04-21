@@ -6,11 +6,11 @@
 
 ## Persona 1: Casual Player
 
-**Name:** Billy Bob Joe III
-**Age:** 30
-**Job:** Stock Broker
-**Device:** PC 
-**Likes:** Short, frequent sessions  
+**Name:** Billy Bob Joe III     
+**Age:** 30     
+**Job:** Stock Broker       
+**Device:** PC      
+**Likes:** Short, frequent sessions         
 
 ### About Billy Bob Joe III
 Billy plays slots when he has free time. This could be during breaks at work, after he comes home from work, or when he's riding on the bus to and from work. Billy doesn't care about strategies on how to win big, he just wants a fun game to play. 
@@ -40,11 +40,11 @@ Billy plays slots when he has free time. This could be during breaks at work, af
 
 ## Persona 2: Wants to Make Money
 
-**Name:** Chuck Hutcherson
-**Age:** 28
-**Job:** In between jobs  
-**Device** Home PC
-**Likes:** Long play sessions with huge bets
+**Name:** Chuck Hutcherson      
+**Age:** 28     
+**Job:** In between jobs        
+**Device** Home PC      
+**Likes:** Long play sessions with huge bets        
 
 ### Background
 Chuck passed his stats class and understands probabilites, and he has made peace with the fact that the house always wins. However, he still loves to optimize his strategies and bet big. 
