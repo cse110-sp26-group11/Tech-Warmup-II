@@ -32,3 +32,7 @@
     * Daily login hooks, leveling, and in-game currency management.
 * **Phase 4: UI/UX & Feedback**
     * Frontend generation with strict HTML/CSS linting.
+* **Phase 5: Edge cases & Meta UI**
+    * Reload credits.
+* **Phase 6: Achievements & Tracking**
+    * Statistics tracker for number of spins payout and biggest win
