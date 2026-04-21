@@ -4,10 +4,11 @@
  */
 
 const { BankruptcyRescue } = require('../meta/rescue');
+const { StatisticsTracker } = require('../meta/statistics');
 
 /**
  * @class GameController
- * @description Coordinates the SlotEngine, Wallet, and Leveling systems.
+ * @description Coordinates the SlotEngine, Wallet, Leveling, and Statistics systems.
  */
 class GameController {
   /**
@@ -20,6 +21,15 @@ class GameController {
     this.wallet = wallet;
     this.leveling = leveling;
     this.rescue = new BankruptcyRescue();
+    this.statsTracker = new StatisticsTracker();
+  }
+
+  /**
+   * Retrieves current player statistics.
+   * @returns {import('../meta/statistics').PlayerStats}
+   */
+  getStats() {
+    return this.statsTracker.getStats();
   }
 
   /**
@@ -41,7 +51,7 @@ class GameController {
 
   /**
    * Executes a full game round (spin).
-...
+   * 
    * @param {number} betAmount - The amount of coins to wager.
    * @returns {Object} The consolidated result of the spin.
    * @throws {Error} If balance is insufficient or bet amount is invalid.
@@ -62,15 +72,18 @@ class GameController {
     const spinResult = this.engine.spin();
     const winAmount = spinResult.payout * betAmount;
 
-    // 3. Add Winnings
+    // 3. Update Statistics
+    this.statsTracker.updateStats({ winAmount });
+
+    // 4. Add Winnings
     if (winAmount > 0) {
       this.wallet.addCoins(winAmount);
     }
 
-    // 4. Award XP (based on bet amount)
+    // 5. Award XP (based on bet amount)
     const levelResult = this.leveling.addXP(betAmount, this.wallet);
 
-    // 5. Return Consolidated Result
+    // 6. Return Consolidated Result
     return {
       spinResult: {
         symbols: spinResult.symbols,
@@ -84,6 +97,7 @@ class GameController {
         leveledUp: levelResult.leveledUp,
         progress: this.leveling.getProgress(),
       },
+      stats: this.getStats(),
     };
   }
 }

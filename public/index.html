@@ -39,8 +39,32 @@
                 <label for="bet-amount">Bet:</label>
                 <input type="number" id="bet-amount" value="10" min="1" step="5">
             </div>
-            <button id="spin-button" class="btn-spin">SPIN</button>
+            <div class="button-group">
+                <button id="spin-button" class="btn-spin">SPIN</button>
+                <button id="stats-button" class="btn-secondary">VIEW STATS</button>
+            </div>
             <button id="rescue-button" class="btn-rescue hidden">GET FREE COINS</button>
+        </div>
+
+        <div id="stats-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Player Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Spins</span>
+                        <span id="stat-total-spins" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Biggest Win</span>
+                        <span id="stat-biggest-win" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Coins Won</span>
+                        <span id="stat-total-won" class="stat-value">0</span>
+                    </div>
+                </div>
+                <button id="close-stats" class="btn-red">CLOSE</button>
+            </div>
         </div>
 
         <div id="message-display" class="message-display">

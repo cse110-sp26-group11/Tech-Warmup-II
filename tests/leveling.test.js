@@ -51,6 +51,24 @@ describe('Leveling Module', () => {
       expect(wallet.getBalance()).toBe(4500);
     });
 
+    test('should handle extremely large level ups from a single XP gain (Performance Fix)', () => {
+      // XP for 1,000,001 levels
+      const largeXP = 1000000 * 1000; 
+      const result = leveling.addXP(largeXP, wallet);
+      
+      expect(leveling.getLevel()).toBe(1000001);
+      expect(result.leveledUp).toBe(true);
+      
+      /**
+       * Expected Reward = 500 * [Sum(1000001) - Sum(1)]
+       * Sum(n) = n*(n+1)/2
+       * Sum(1000001) = 1000001 * 1000002 / 2 = 500001500001
+       * Sum(1) = 1
+       * Reward = 500 * 500001500000 = 250000750000000
+       */
+      expect(wallet.getBalance()).toBe(250000750000000);
+    });
+
     test('should throw error for invalid XP amount', () => {
       expect(() => leveling.addXP(-10, wallet)).toThrow('XP to add must be a positive number');
       expect(() => leveling.addXP('100', wallet)).toThrow('XP to add must be a positive number');

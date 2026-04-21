@@ -51,15 +51,25 @@ class Leveling {
     }
 
     this._xp += amount;
-    let leveledUp = false;
     const initialLevel = this._level;
+    const newLevel = Math.floor(this._xp / this._XP_PER_LEVEL) + 1;
+    let leveledUp = false;
 
-    // Check for level ups (can be multiple levels at once)
-    while (this._xp >= this._level * this._XP_PER_LEVEL) {
-      this._level++;
+    if (newLevel > initialLevel) {
       leveledUp = true;
-      const reward = this._level * this._REWARD_PER_LEVEL;
-      wallet.addCoins(reward);
+      this._level = newLevel;
+
+      /**
+       * Calculate total rewards for all levels gained.
+       * Sum of arithmetic progression: (L_initial + 1) + ... + L_new
+       * Reward = REWARD_PER_LEVEL * [Sum(L_new) - Sum(L_initial)]
+       * where Sum(n) = n * (n + 1) / 2
+       */
+      const sumInitial = (initialLevel * (initialLevel + 1)) / 2;
+      const sumNew = (newLevel * (newLevel + 1)) / 2;
+      const totalReward = (sumNew - sumInitial) * this._REWARD_PER_LEVEL;
+
+      wallet.addCoins(totalReward);
     }
 
     return {

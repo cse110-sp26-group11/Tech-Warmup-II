@@ -27,12 +27,21 @@ class Leveling {
     getLevel() { return this._level; }
     getXP() { return this._xp; }
     addXP(amount, wallet) {
+        const initialLevel = this._level;
         this._xp += amount;
+        const newLevel = Math.floor(this._xp / this._XP_PER_LEVEL) + 1;
         let leveledUp = false;
-        while (this._xp >= this._level * this._XP_PER_LEVEL) {
-            this._level++;
+
+        if (newLevel > initialLevel) {
             leveledUp = true;
-            wallet.addCoins(this._level * 500);
+            this._level = newLevel;
+            
+            // Reward calculation using arithmetic progression sum
+            const sumInitial = (initialLevel * (initialLevel + 1)) / 2;
+            const sumNew = (newLevel * (newLevel + 1)) / 2;
+            const totalReward = (sumNew - sumInitial) * 500;
+            
+            wallet.addCoins(totalReward);
         }
         return { leveledUp, newLevel: this._level };
     }
@@ -40,6 +49,26 @@ class Leveling {
         const threshold = this._level * this._XP_PER_LEVEL;
         const prevThreshold = (this._level - 1) * this._XP_PER_LEVEL;
         return Math.floor(((this._xp - prevThreshold) / (threshold - prevThreshold)) * 100);
+    }
+}
+
+class StatisticsTracker {
+    constructor() {
+        this._totalSpins = 0;
+        this._biggestWin = 0;
+        this._totalCoinsWon = 0;
+    }
+    updateStats(winAmount) {
+        this._totalSpins++;
+        this._totalCoinsWon += winAmount;
+        if (winAmount > this._biggestWin) this._biggestWin = winAmount;
+    }
+    getStats() {
+        return {
+            totalSpins: this._totalSpins,
+            biggestWin: this._biggestWin,
+            totalCoinsWon: this._totalCoinsWon
+        };
     }
 }
 
@@ -74,6 +103,7 @@ class GameController {
         this.engine = engine;
         this.wallet = wallet;
         this.leveling = leveling;
+        this.stats = new StatisticsTracker();
     }
     isEligibleForRescue() {
         return this.wallet.getBalance() < 10;
@@ -87,14 +117,20 @@ class GameController {
         this.wallet.deductCoins(betAmount);
         const spinResult = this.engine.spin();
         const winAmount = spinResult.payout * betAmount;
+        
+        // Update stats
+        this.stats.updateStats(winAmount);
+        
         if (winAmount > 0) this.wallet.addCoins(winAmount);
         const levelResult = this.leveling.addXP(betAmount, this.wallet);
+        
         return {
             symbols: spinResult.symbols,
             winAmount,
             newBalance: this.wallet.getBalance(),
             level: this.leveling.getLevel(),
-            leveledUp: levelResult.leveledUp
+            leveledUp: levelResult.leveledUp,
+            stats: this.stats.getStats()
         };
     }
 }
@@ -125,6 +161,9 @@ const levelEl = document.getElementById('current-level');
 const balanceEl = document.getElementById('current-balance');
 const spinBtn = document.getElementById('spin-button');
 const rescueBtn = document.getElementById('rescue-button');
+const statsBtn = document.getElementById('stats-button');
+const closeStatsBtn = document.getElementById('close-stats');
+const statsModal = document.getElementById('stats-modal');
 const betInput = document.getElementById('bet-amount');
 const messageEl = document.getElementById('message-display');
 const celebrationOverlay = document.getElementById('celebration-overlay');
@@ -186,12 +225,8 @@ function triggerCelebration() {
         }
     }
 
-    // Audio Placeholder: Trigger Big Win Sound
-    // document.getElementById('sound-big-win')?.play();
-
     animate();
     
-    // Auto-hide after 3 seconds
     setTimeout(() => {
         celebrationOverlay.classList.add('hidden');
     }, 3000);
@@ -230,6 +265,13 @@ function updateUI(state) {
             messageEl.textContent += ` LEVEL UP! Reached Level ${state.level}!`;
         }
     }
+
+    // Update Modal data if it exists in state
+    if (state.stats) {
+        document.getElementById('stat-total-spins').textContent = state.stats.totalSpins;
+        document.getElementById('stat-biggest-win').textContent = state.stats.biggestWin;
+        document.getElementById('stat-total-won').textContent = state.stats.totalCoinsWon;
+    }
 }
 
 // --- Event Listeners ---
@@ -238,28 +280,21 @@ spinBtn.addEventListener('click', () => {
     const bet = parseInt(betInput.value);
     
     try {
-        // Validation check before starting animation
         if (wallet.getBalance() < bet) {
-            // Check for rescue eligibility immediately
             if (gameController.isEligibleForRescue()) {
                 rescueBtn.classList.remove('hidden');
             }
             throw new Error('Insufficient balance');
         }
 
-        // Disable button and start animation
         spinBtn.disabled = true;
         messageEl.textContent = 'Spinning...';
         
         reels.forEach(reel => reel.classList.add('spinning'));
 
-        // Delay the result reveal to match the animation (1.5 seconds)
         setTimeout(() => {
             const result = gameController.playSpin(bet);
-            
-            // Stop animation
             reels.forEach(reel => reel.classList.remove('spinning'));
-            
             updateUI(result);
             spinBtn.disabled = false;
         }, 1500);
@@ -276,17 +311,25 @@ rescueBtn.addEventListener('click', () => {
         const amount = gameController.claimRescueFunds();
         messageEl.textContent = `RESCUE GRANTED: ${amount} COINS!`;
         messageEl.style.color = 'var(--color-gold)';
-        
-        // Update UI state
         updateUI({
             newBalance: wallet.getBalance(),
             level: leveling.getLevel()
         });
-        
-        // Visual feedback
         triggerCelebration();
     } catch (error) {
         messageEl.textContent = error.message;
         messageEl.style.color = 'var(--color-red)';
     }
+});
+
+statsBtn.addEventListener('click', () => {
+    const currentStats = gameController.stats.getStats();
+    document.getElementById('stat-total-spins').textContent = currentStats.totalSpins;
+    document.getElementById('stat-biggest-win').textContent = currentStats.biggestWin;
+    document.getElementById('stat-total-won').textContent = currentStats.totalCoinsWon;
+    statsModal.classList.remove('hidden');
+});
+
+closeStatsBtn.addEventListener('click', () => {
+    statsModal.classList.add('hidden');
 });
