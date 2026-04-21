@@ -142,5 +142,6 @@ Research collected and synthesized by **Siddharth** from the team's Miro board r
 | Arjun | Review of core game mechanics and statistical methods used in industry to maximise profit |
 | Ryan  | Reviewed common themes of slot machines and wireframes |
 | Zihan | Researched common themes of slot machines and art styles such as visual elements |
+| Yuting | Researched app design and summarized key findings on visual themes, engagement psychology, sound design, and essential slot-machine terminology |
 | [Name] | [What you researched] |
 | [Name] | [What you researched] |
