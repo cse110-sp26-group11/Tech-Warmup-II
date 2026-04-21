@@ -1,0 +1,107 @@
+/**
+ * @module controllers/gameController
+ * @description Orchestrator for the Slot Machine game systems.
+ */
+
+const { BankruptcyRescue } = require('../meta/rescue');
+const { StatisticsTracker } = require('../meta/statistics');
+
+/**
+ * @class GameController
+ * @description Coordinates the SlotEngine, Wallet, Leveling, and Statistics systems.
+ */
+class GameController {
+  /**
+   * @param {import('../math/engine').SlotEngine} engine - The slot math engine.
+   * @param {import('../meta/wallet').Wallet} wallet - The player's currency wallet.
+   * @param {import('../meta/leveling').Leveling} leveling - The player's leveling system.
+   */
+  constructor(engine, wallet, leveling) {
+    this.engine = engine;
+    this.wallet = wallet;
+    this.leveling = leveling;
+    this.rescue = new BankruptcyRescue();
+    this.statsTracker = new StatisticsTracker();
+  }
+
+  /**
+   * Retrieves current player statistics.
+   * @returns {import('../meta/statistics').PlayerStats}
+   */
+  getStats() {
+    return this.statsTracker.getStats();
+  }
+
+  /**
+   * Checks if the player is eligible for rescue funds.
+   * @returns {boolean}
+   */
+  isEligibleForRescue() {
+    return this.rescue.isEligible(this.wallet);
+  }
+
+  /**
+   * Claims rescue funds for the player.
+   * @returns {number} The amount granted.
+   * @throws {Error} If ineligible.
+   */
+  claimRescueFunds() {
+    return this.rescue.claimBonus(this.wallet);
+  }
+
+  /**
+   * Executes a full game round (spin).
+   * 
+   * @param {number} betAmount - The amount of coins to wager.
+   * @returns {Object} The consolidated result of the spin.
+   * @throws {Error} If balance is insufficient or bet amount is invalid.
+   * 
+   * @example
+   * const result = controller.playSpin(10);
+   * console.log(result.newBalance);
+   */
+  playSpin(betAmount) {
+    if (typeof betAmount !== 'number' || betAmount <= 0) {
+      throw new Error('Bet amount must be a positive number');
+    }
+
+    // 1. Deduct Bet
+    this.wallet.deductCoins(betAmount);
+
+    // 2. Execute Spin
+    const spinResult = this.engine.spin();
+    const winAmount = spinResult.payout * betAmount;
+
+    // 3. Update Statistics
+    this.statsTracker.updateStats({ winAmount });
+
+    // 4. Add Winnings
+    if (winAmount > 0) {
+      this.wallet.addCoins(winAmount);
+    }
+
+    // 5. Award XP (based on bet amount)
+    const levelResult = this.leveling.addXP(betAmount, this.wallet);
+
+    // 6. Return Consolidated Result
+    return {
+      spinResult: {
+        symbols: spinResult.symbols,
+        payoutMultiplier: spinResult.payout,
+        winAmount,
+      },
+      newBalance: this.wallet.getBalance(),
+      levelInfo: {
+        currentLevel: this.leveling.getLevel(),
+        currentXP: this.leveling.getXP(),
+        leveledUp: levelResult.leveledUp,
+        progress: this.leveling.getProgress(),
+      },
+      stats: this.getStats(),
+    };
+  }
+}
+
+module.exports = {
+  GameController,
+};

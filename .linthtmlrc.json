@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "attr-name-style": "dash",
+    "indent-style": "spaces",
+    "indent-width": 2,
+    "tag-name-lowercase": true
+  }
+}

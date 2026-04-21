@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Casino - Slot Machine</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Social Casino Slots</h1>
+        <div class="player-stats">
+            <div class="stat-box" id="level-display">
+                <span class="label">Level</span>
+                <span class="value" id="current-level">1</span>
+            </div>
+            <div class="stat-box" id="balance-display">
+                <span class="label">Coins</span>
+                <span class="value" id="current-balance">1000</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="reel-container" class="reel-container">
+            <div class="reel" id="reel-0">?</div>
+            <div class="reel" id="reel-1">?</div>
+            <div class="reel" id="reel-2">?</div>
+        </div>
+
+        <!-- Win Celebration Overlay -->
+        <div id="celebration-overlay" class="celebration-overlay hidden">
+            <canvas id="confetti-canvas"></canvas>
+            <div class="win-banner">BIG WIN!</div>
+        </div>
+
+        <div class="controls">
+            <div class="bet-control">
+                <label for="bet-amount">Bet:</label>
+                <input type="number" id="bet-amount" value="10" min="1" step="5">
+            </div>
+            <div class="button-group">
+                <button id="spin-button" class="btn-spin">SPIN</button>
+                <button id="stats-button" class="btn-secondary">VIEW STATS</button>
+            </div>
+            <button id="rescue-button" class="btn-rescue hidden">GET FREE COINS</button>
+        </div>
+
+        <div id="stats-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Player Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Spins</span>
+                        <span id="stat-total-spins" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Biggest Win</span>
+                        <span id="stat-biggest-win" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Coins Won</span>
+                        <span id="stat-total-won" class="stat-value">0</span>
+                    </div>
+                </div>
+                <button id="close-stats" class="btn-red">CLOSE</button>
+            </div>
+        </div>
+
+        <div id="message-display" class="message-display">
+            Good Luck!
+        </div>
+    </main>
+
+    <footer>
+        <p class="disclaimer">NO REAL MONEY REQUIRED. This is a social casino for entertainment purposes only.</p>
+    </footer>
+
+    <!-- Audio Placeholders -->
+    <!-- 
+    <audio id="sound-spin" src="assets/sounds/spin.mp3" preload="auto"></audio>
+    <audio id="sound-win" src="assets/sounds/win.mp3" preload="auto"></audio>
+    <audio id="sound-big-win" src="assets/sounds/big-win.mp3" preload="auto"></audio>
+    -->
+
+    <!-- Game Logic Scripts -->
+    <!-- In a real production app, these would be bundled. 
+         For this foundational step, app.js will contain the necessary logic or import it. -->
+    <script src="app.js" type="module"></script>
+</body>
+</html>
