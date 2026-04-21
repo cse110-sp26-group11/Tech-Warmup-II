@@ -37,7 +37,9 @@ class BankruptcyRescue {
    */
   claimBonus(wallet) {
     if (!this.isEligible(wallet)) {
-      throw new Error(`Balance must be below ${this._MIN_REQUIRED_BET} coins to claim rescue funds`);
+      throw new Error(
+        `Balance must be below ${this._MIN_REQUIRED_BET} coins to claim rescue funds`
+      );
     }
 
     wallet.addCoins(this._RESCUE_BONUS);

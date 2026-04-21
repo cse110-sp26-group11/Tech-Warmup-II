@@ -21,7 +21,8 @@ describe('BankruptcyRescue Module', () => {
 
     test('should throw an error if balance is 10 or higher', () => {
       wallet.deductCoins(90); // Balance = 10
-      expect(() => rescue.claimBonus(wallet)).toThrow('Balance must be below 10 coins to claim rescue funds');
+      expect(() => rescue.claimBonus(wallet))
+        .toThrow('Balance must be below 10 coins to claim rescue funds');
       expect(wallet.getBalance()).toBe(10);
     });
 

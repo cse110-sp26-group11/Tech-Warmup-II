@@ -33,11 +33,13 @@ describe('SlotEngine', () => {
     });
 
     test('should throw an error for missing reels', () => {
-      expect(() => new SlotEngine({ paytable: [] })).toThrow('Invalid configuration: reels and paytable are required');
+      expect(() => new SlotEngine({ paytable: [] }))
+        .toThrow('Invalid configuration: reels and paytable are required');
     });
 
     test('should throw an error for empty paytable', () => {
-      expect(() => new SlotEngine({ reels: [[]], paytable: [] })).toThrow('Invalid configuration: reels and paytable cannot be empty');
+      expect(() => new SlotEngine({ reels: [[]], paytable: [] }))
+        .toThrow('Invalid configuration: reels and paytable cannot be empty');
     });
   });
 

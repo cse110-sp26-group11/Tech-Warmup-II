@@ -1,6 +1,7 @@
 /**
  * @module utils/rng
- * @description Cryptographically Secure Random Number Generator utility for the Slot Machine Math Engine.
+ * @description Cryptographically Secure Random Number Generator utility for the
+ * Slot Machine Math Engine.
  */
 
 const crypto = require('crypto');
@@ -8,10 +9,12 @@ const crypto = require('crypto');
 /**
  * Generates a cryptographically secure random integer between min (inclusive) and max (exclusive).
  * 
- * @param {number} minOrMax - The minimum value (inclusive) if two arguments are provided, otherwise the maximum value (exclusive).
+ * @param {number} minOrMax - The minimum value (inclusive) if two arguments are provided,
+ * otherwise the maximum value (exclusive).
  * @param {number} [maxVal] - The maximum value (exclusive) if two arguments are provided.
  * @returns {number} A cryptographically secure random integer.
- * @throws {Error} Throws an error if parameters are missing, not integers, or if min is not less than max.
+ * @throws {Error} Throws an error if parameters are missing, not integers, or if
+ * min is not less than max.
  * 
  * @example
  * // Returns a random integer between 0 and 9

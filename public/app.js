@@ -109,7 +109,9 @@ class GameController {
         return this.wallet.getBalance() < 10;
     }
     claimRescueFunds() {
-        if (!this.isEligibleForRescue()) throw new Error('Balance must be below 10 coins to claim rescue funds');
+        if (!this.isEligibleForRescue()) {
+            throw new Error('Balance must be below 10 coins to claim rescue funds');
+        }
         this.wallet.addCoins(500);
         return 500;
     }
@@ -139,9 +141,27 @@ class GameController {
 
 const config = {
     reels: [
-        [{ symbol: '🍒', weight: 5 }, { symbol: '🍋', weight: 10 }, { symbol: '7️⃣', weight: 1 }, { symbol: '💎', weight: 1 }, { symbol: '⚪', weight: 23 }],
-        [{ symbol: '🍒', weight: 5 }, { symbol: '🍋', weight: 10 }, { symbol: '7️⃣', weight: 1 }, { symbol: '💎', weight: 1 }, { symbol: '⚪', weight: 23 }],
-        [{ symbol: '🍒', weight: 5 }, { symbol: '🍋', weight: 10 }, { symbol: '7️⃣', weight: 1 }, { symbol: '💎', weight: 1 }, { symbol: '⚪', weight: 23 }]
+        [
+            { symbol: '🍒', weight: 5 },
+            { symbol: '🍋', weight: 10 },
+            { symbol: '7️⃣', weight: 1 },
+            { symbol: '💎', weight: 1 },
+            { symbol: '⚪', weight: 23 }
+        ],
+        [
+            { symbol: '🍒', weight: 5 },
+            { symbol: '🍋', weight: 10 },
+            { symbol: '7️⃣', weight: 1 },
+            { symbol: '💎', weight: 1 },
+            { symbol: '⚪', weight: 23 }
+        ],
+        [
+            { symbol: '🍒', weight: 5 },
+            { symbol: '🍋', weight: 10 },
+            { symbol: '7️⃣', weight: 1 },
+            { symbol: '💎', weight: 1 },
+            { symbol: '⚪', weight: 23 }
+        ]
     ],
     paytable: [
         { symbols: ['7️⃣', '7️⃣', '7️⃣'], payout: 50 },

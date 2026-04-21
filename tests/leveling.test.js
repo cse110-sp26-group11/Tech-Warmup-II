@@ -75,7 +75,8 @@ describe('Leveling Module', () => {
     });
 
     test('should throw error if wallet is missing', () => {
-      expect(() => leveling.addXP(100, null)).toThrow('Valid Wallet instance is required for rewards');
+      expect(() => leveling.addXP(100, null))
+        .toThrow('Valid Wallet instance is required for rewards');
     });
   });
 

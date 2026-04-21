@@ -66,8 +66,9 @@ describe('DailyLogin Module', () => {
       expect(dailyLogin.getStreak()).toBe(1);
     });
 
-    test('should throw error for invalid wallet input', () => {
-      expect(() => dailyLogin.processLogin(null, new Date())).toThrow('Valid Wallet instance is required');
+    test('should throw error if wallet is missing', () => {
+      expect(() => dailyLogin.processLogin(null, new Date()))
+        .toThrow('Valid Wallet instance is required');
     });
 
     test('should throw error for invalid date input', () => {
