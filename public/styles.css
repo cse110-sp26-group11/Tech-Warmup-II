@@ -1,0 +1,167 @@
+/* 
+ * Color Psychology:
+ * - Gold (#FFD700): Confidence, rewards, balance.
+ * - Red (#FF0000): Excitement, jackpots, urgent actions.
+ * - Blue (#0056b3): Trust, longer play sessions, background.
+ */
+
+:root {
+    --color-gold: #FFD700;
+    --color-red: #D32F2F;
+    --color-blue: #1976D2;
+    --color-dark-blue: #0D47A1;
+    --color-white: #FFFFFF;
+    --color-black: #121212;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--color-dark-blue);
+    color: var(--color-white);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+header {
+    width: 100%;
+    padding: 20px 0;
+    background-color: var(--color-blue);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-bottom: 4px solid var(--color-gold);
+}
+
+h1 {
+    margin: 0 0 15px 0;
+    color: var(--color-gold);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.player-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-box {
+    background-color: var(--color-black);
+    padding: 10px 20px;
+    border: 2px solid var(--color-gold);
+    border-radius: 8px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.stat-box .label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--color-gold);
+}
+
+.stat-box .value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px;
+}
+
+.reel-container {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    background-color: var(--color-black);
+    border: 5px solid var(--color-gold);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+
+.reel {
+    width: 100px;
+    height: 150px;
+    background-color: var(--color-white);
+    color: var(--color-black);
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 3px solid #ccc;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.bet-control {
+    font-size: 1.2rem;
+}
+
+.bet-control input {
+    background: var(--color-black);
+    color: var(--color-white);
+    border: 2px solid var(--color-gold);
+    padding: 5px 10px;
+    border-radius: 5px;
+    width: 80px;
+    font-size: 1.1rem;
+}
+
+.btn-spin {
+    background-color: var(--color-red);
+    color: var(--color-white);
+    border: none;
+    padding: 15px 60px;
+    font-size: 2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #8B0000;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-spin:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #8B0000;
+}
+
+.btn-spin:disabled {
+    background-color: #666;
+    box-shadow: 0 5px 0 #444;
+    cursor: not-allowed;
+}
+
+.message-display {
+    font-size: 1.5rem;
+    color: var(--color-gold);
+    min-height: 2rem;
+    text-align: center;
+}
+
+footer {
+    padding: 20px;
+    text-align: center;
+    background-color: rgba(0,0,0,0.3);
+    width: 100%;
+}
+
+.disclaimer {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin: 0;
+}
