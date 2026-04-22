@@ -1,11 +1,11 @@
 /**
  * @file audio.js
- * @description Enhanced Audio management system using Web Audio API for immersive casino sounds.
+ * @description Audio management system using Web Audio API for playing custom audio files.
  */
 
 /**
  * @class AudioManager
- * @description Manages synthesized audio and an immersive background soundscape.
+ * @description Manages playback of game audio files with precise segment control and looping.
  */
 class AudioManager {
     /**
@@ -21,20 +21,26 @@ class AudioManager {
         this.masterGain = null;
         /** @type {GainNode|null} */
         this.ambienceGain = null;
+        /** @type {Object.<string, AudioBuffer>} */
+        this.buffers = {};
+        /** @type {AudioBufferSourceNode|null} */
+        this.backgroundSource = null;
         /** @type {number|null} */
-        this.spinInterval = null;
+        this.drumTimeout = null;
         /** @type {number|null} */
-        this.chimeTimeout = null;
-        /** @type {OscillatorNode[]} */
-        this.activeNodes = [];
+        this.startTimeout = null;
+        /** @type {boolean} */
+        this.isInitialized = false;
     }
 
     /**
-     * Ensures AudioContext is initialized (must be called after user interaction).
+     * Ensures AudioContext is initialized and assets are loaded.
      * @private
      */
-    _initContext() {
-        if (!this.ctx) {
+    async _initContext() {
+        if (this.isInitialized) return;
+        
+        try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             this.masterGain = this.ctx.createGain();
             this.masterGain.connect(this.ctx.destination);
@@ -43,98 +49,57 @@ class AudioManager {
             this.ambienceGain.connect(this.masterGain);
             
             this._updateVolume();
+            await this._loadAssets();
             this._startAmbience();
+            
+            this.isInitialized = true;
+        } catch (error) {
+            console.error('Failed to initialize AudioContext:', error);
         }
     }
 
     /**
-     * Starts the multi-layered casino soundscape.
+     * Loads and decodes all audio assets.
+     * @private
+     */
+    async _loadAssets() {
+        const assets = {
+            background: 'sounds/background.mp3',
+            start: 'sounds/start.mp3',
+            drum: 'sounds/drum.wav',
+            winning: 'sounds/winning.mp3',
+            losing: 'sounds/losing.wav',
+            clap: 'sounds/clap.mp3'
+        };
+
+        const loadPromises = Object.entries(assets).map(async ([key, url]) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const arrayBuffer = await response.arrayBuffer();
+                this.buffers[key] = await this.ctx.decodeAudioData(arrayBuffer);
+            } catch (e) {
+                console.error(`Failed to load audio asset: ${url}`, e);
+            }
+        });
+
+        await Promise.all(loadPromises);
+    }
+
+    /**
+     * Starts the background music loop.
      * @private
      */
     _startAmbience() {
-        if (this.activeNodes.length > 0) return;
-
-        this._createPad();
-        this._createMurmur();
-        this._scheduleChime();
-        this.ambienceGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-    }
-
-    /**
-     * Creates a warm, evolving pad sound using detuned oscillators and LFO.
-     * @private
-     */
-    _createPad() {
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(400, this.ctx.currentTime);
-        filter.connect(this.ambienceGain);
-
-        // LFO for filter modulation to create movement
-        const lfo = this.ctx.createOscillator();
-        const lfoGain = this.ctx.createGain();
-        lfo.frequency.setValueAtTime(0.2, this.ctx.currentTime);
-        lfoGain.gain.setValueAtTime(200, this.ctx.currentTime);
-        lfo.connect(lfoGain);
-        lfoGain.connect(filter.frequency);
-        lfo.start();
-        this.activeNodes.push(lfo);
-
-        // C3, E3, G3 detuned for warmth
-        const freqs = [130.81, 164.81, 196.00];
-        freqs.forEach((f, i) => {
-            const osc = this.ctx.createOscillator();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(f, this.ctx.currentTime);
-            osc.detune.setValueAtTime((i - 1) * 5, this.ctx.currentTime);
-            osc.connect(filter);
-            osc.start();
-            this.activeNodes.push(osc);
-        });
-    }
-
-    /**
-     * Creates a subtle 'crowd murmur' using filtered white noise.
-     * @private
-     */
-    _createMurmur() {
-        const bufferSize = 2 * this.ctx.sampleRate;
-        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-
-        const whiteNoise = this.ctx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-        whiteNoise.loop = true;
-
-        const noiseFilter = this.ctx.createBiquadFilter();
-        noiseFilter.type = 'lowpass';
-        noiseFilter.frequency.setValueAtTime(600, this.ctx.currentTime);
-
-        const noiseGain = this.ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-
-        whiteNoise.connect(noiseFilter);
-        noiseFilter.connect(noiseGain);
-        noiseGain.connect(this.ambienceGain);
-        whiteNoise.start();
-        this.activeNodes.push(whiteNoise);
-    }
-
-    /**
-     * Schedules occasional random chimes in a major pentatonic scale.
-     * @private
-     */
-    _scheduleChime() {
-        const delay = (Math.random() * 7 + 8) * 1000; // 8-15 seconds
-        this.chimeTimeout = setTimeout(() => {
-            if (!this.isMuted) {
-                const notes = [523.25, 587.33, 659.25, 783.99, 880.00]; // C5-A5 Pentatonic
-                const note = notes[Math.floor(Math.random() * notes.length)];
-                this._playTone(note, 2.0, 'sine', 0.05);
-            }
-            this._scheduleChime();
-        }, delay);
+        if (this.isMuted || !this.buffers.background) return;
+        
+        this.backgroundSource = this.ctx.createBufferSource();
+        this.backgroundSource.buffer = this.buffers.background;
+        this.backgroundSource.loop = true;
+        this.backgroundSource.connect(this.ambienceGain);
+        
+        this.ambienceGain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        this.backgroundSource.start();
     }
 
     /**
@@ -152,127 +117,111 @@ class AudioManager {
      * Toggles the mute state and persists it to localStorage.
      * @returns {boolean} The new mute state.
      */
-    toggleMute() {
-        this._initContext();
+    async toggleMute() {
+        await this._initContext();
+
+        // Explicitly resume the AudioContext to handle browser auto-play restrictions
+        if (this.ctx && this.ctx.state === 'suspended') {
+            await this.ctx.resume();
+            console.log('AudioContext successfully resumed on user interaction.');
+        }
+
         this.isMuted = !this.isMuted;
         localStorage.setItem('slot_machine_muted', this.isMuted);
         this._updateVolume();
+        
+        if (!this.isMuted && !this.backgroundSource) {
+            this._startAmbience();
+        }
         return this.isMuted;
     }
 
     /**
-     * Plays a simple synthesized sound.
-     * @param {number} freq Frequency in Hz.
-     * @param {number} duration Duration in seconds.
-     * @param {OscillatorType} type Oscillator type ('sine', 'square', etc).
-     * @param {number} vol Volume (0.0 to 1.0).
+     * Internal helper to play a sound buffer with segment control.
+     * @param {string} key Asset key.
+     * @param {number} [offset=0] Start time in seconds.
+     * @param {number} [duration] Duration in seconds.
+     * @param {GainNode} [output] Destination node.
      * @private
      */
-    _playTone(freq, duration, type = 'sine', vol = 0.2) {
-        if (this.isMuted) return;
-        this._initContext();
-        if (this.ctx.state === 'suspended') return;
-
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
+    _playBuffer(key, offset = 0, duration = undefined, output = this.masterGain) {
+        if (this.isMuted || !this.buffers[key]) return;
+        
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.buffers[key];
+        source.connect(output);
+        source.start(this.ctx.currentTime, offset, duration);
+        return source;
     }
 
     /**
-     * Starts the continuous reel spin sound loop with ducked ambience.
+     * Starts the spin sound sequence.
      */
-    startSpinLoop() {
-        this._initContext();
+    async startSpinLoop() {
+        await this._initContext();
         if (this.isMuted) return;
 
-        this.ambienceGain.gain.setTargetAtTime(0.01, this.ctx.currentTime, 0.1);
+        // Duck ambience
+        this.ambienceGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.1);
 
-        let delay = 100;
-        const playClick = () => {
-            this._playTone(200, 0.05, 'square', 0.1);
-            if (this.spinInterval) {
-                delay = Math.min(delay + 10, 250);
-                this.spinInterval = setTimeout(playClick, delay);
+        // Play start.mp3 (first 1.5s)
+        this._playBuffer('start', 0, 1.5);
+
+        // Start drum loop after 1s
+        let interval = 100;
+        const playDrum = () => {
+            this._playBuffer('drum');
+            if (this.drumTimeout) {
+                interval = Math.min(interval + 15, 300); // Slow down
+                this.drumTimeout = setTimeout(playDrum, interval);
             }
         };
-        this.spinInterval = setTimeout(playClick, delay);
+
+        this.startTimeout = setTimeout(() => {
+            this.drumTimeout = setTimeout(playDrum, 0);
+        }, 1000);
     }
 
     /**
-     * Stops the spin loop and restores ambience.
+     * Stops the spin sequence and restores ambience.
      */
     stopSpinLoop() {
-        if (this.spinInterval) {
-            clearTimeout(this.spinInterval);
-            this.spinInterval = null;
+        if (this.drumTimeout) {
+            clearTimeout(this.drumTimeout);
+            this.drumTimeout = null;
         }
-        if (this.ctx && this.ambienceGain) {
-            this.ambienceGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.5);
+        if (this.startTimeout) {
+            clearTimeout(this.startTimeout);
+            this.startTimeout = null;
+        }
+        if (this.ambienceGain) {
+            this.ambienceGain.gain.setTargetAtTime(0.25, this.ctx.currentTime, 0.5);
         }
     }
 
     /**
-     * Plays the spin start sound (deprecated in favor of loop).
-     */
-    playSpinSound() {
-        this._playTone(150, 0.1, 'square');
-    }
-
-    /**
-     * Plays a standard win sound (ascending chime).
+     * Plays a standard win sound (first 2s of winning.mp3).
      */
     playWinSound() {
-        this._playTone(523.25, 0.3); // C5
-        setTimeout(() => this._playTone(659.25, 0.3), 100); // E5
-        setTimeout(() => this._playTone(783.99, 0.5), 200); // G5
+        this._playBuffer('winning', 0, 2);
     }
 
     /**
-     * Plays a big win sound (fanfare/arpeggio).
+     * Plays big win sound (winning.mp3 0-4s + clap.mp3 4-8s).
      */
     playBigWinSound() {
-        const notes = [523.25, 659.25, 783.99, 1046.50];
-        notes.forEach((note, i) => {
-            setTimeout(() => this._playTone(note, 0.4, 'triangle'), i * 150);
-        });
+        this._playBuffer('winning', 0, 4);
+        this._playBuffer('clap', 4, 4);
     }
 
     /**
-     * Plays a lose sound (descending low tone).
+     * Plays the lose sound (full losing.wav).
      */
     playLoseSound() {
-        this._initContext();
-        if (this.isMuted || this.ctx.state === 'suspended') return;
-
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.5);
-
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
-
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.5);
+        this._playBuffer('losing');
     }
 }
 
-// Support both ESM (via browser module support if used), Global, and CommonJS (Node/Jest)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { AudioManager };
 } else if (typeof window !== 'undefined') {
