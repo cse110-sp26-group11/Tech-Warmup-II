@@ -4,23 +4,16 @@ describe('AudioManager', () => {
     let audioManager;
     let mockAudioContext;
     let mockGainNode;
-    let mockOscillator;
     let mockBufferSource;
-    let mockBiquadFilter;
+    let mockAudioBuffer;
 
     beforeEach(() => {
         jest.useFakeTimers();
         
-        mockOscillator = {
-            type: '',
-            frequency: { 
-                setValueAtTime: jest.fn(), 
-                exponentialRampToValueAtTime: jest.fn() 
-            },
-            detune: { setValueAtTime: jest.fn() },
-            connect: jest.fn(),
-            start: jest.fn(),
-            stop: jest.fn()
+        mockAudioBuffer = {
+            duration: 10,
+            numberOfChannels: 2,
+            sampleRate: 44100
         };
 
         mockGainNode = {
@@ -37,28 +30,23 @@ describe('AudioManager', () => {
             buffer: null,
             loop: false,
             connect: jest.fn(),
-            start: jest.fn()
-        };
-
-        mockBiquadFilter = {
-            type: '',
-            frequency: { setValueAtTime: jest.fn() },
-            connect: jest.fn()
+            start: jest.fn(),
+            stop: jest.fn()
         };
 
         mockAudioContext = {
-            createOscillator: jest.fn(() => mockOscillator),
             createGain: jest.fn(() => mockGainNode),
-            createBiquadFilter: jest.fn(() => mockBiquadFilter),
-            createBuffer: jest.fn(() => ({
-                getChannelData: jest.fn(() => new Float32Array(100))
-            })),
             createBufferSource: jest.fn(() => mockBufferSource),
+            decodeAudioData: jest.fn().mockResolvedValue(mockAudioBuffer),
             currentTime: 0,
-            sampleRate: 44100,
             destination: {},
             state: 'running'
         };
+
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(100))
+        });
 
         global.window = {
             AudioContext: jest.fn(() => mockAudioContext),
@@ -79,65 +67,56 @@ describe('AudioManager', () => {
     });
 
     afterEach(() => {
-        if (audioManager.chimeTimeout) clearTimeout(audioManager.chimeTimeout);
         jest.useRealTimers();
         delete global.window;
         delete global.localStorage;
+        delete global.fetch;
     });
 
-    test('should initialize as muted by default', () => {
-        expect(audioManager.isMuted).toBe(true);
+    test('should initialize and load assets on toggleMute', async () => {
+        await audioManager.toggleMute();
+        expect(global.fetch).toHaveBeenCalledTimes(6);
+        expect(mockAudioContext.decodeAudioData).toHaveBeenCalled();
+        expect(audioManager.isInitialized).toBe(true);
     });
 
-    test('should toggle mute state and store in localStorage', () => {
-        const newState = audioManager.toggleMute();
-        expect(newState).toBe(false);
-        expect(audioManager.isMuted).toBe(false);
-        expect(global.localStorage.setItem).toHaveBeenCalledWith('slot_machine_muted', false);
-    });
-
-    test('should initialize multi-layered ambience on toggleMute', () => {
-        audioManager.toggleMute();
-        expect(global.window.AudioContext).toHaveBeenCalled();
-        // 1 LFO + 3 Pad Oscs = 4 Oscillators
-        expect(mockAudioContext.createOscillator).toHaveBeenCalledTimes(4);
+    test('startSpinLoop should play start segment and schedule drum', async () => {
+        await audioManager.toggleMute(); // Enable
+        audioManager.buffers = { start: mockAudioBuffer, drum: mockAudioBuffer };
+        
+        await audioManager.startSpinLoop();
+        
+        // start.mp3 playback call (offset 0, duration 1.5)
         expect(mockAudioContext.createBufferSource).toHaveBeenCalled();
-        expect(audioManager.activeNodes.length).toBeGreaterThan(0);
+        expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, 1.5);
+        
+        // Advance 1s to start drum loop
+        jest.advanceTimersByTime(1001);
+        expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, undefined);
     });
 
-    test('startSpinLoop should duck ambience and start clicks', () => {
-        audioManager.toggleMute(); // Enable sound
-        audioManager.startSpinLoop();
-        expect(mockGainNode.gain.setTargetAtTime).toHaveBeenCalledWith(0.01, 0, 0.1);
+    test('playWinSound should play segment 0-2s', async () => {
+        await audioManager.toggleMute();
+        audioManager.buffers.winning = mockAudioBuffer;
         
-        jest.advanceTimersByTime(100);
-        expect(mockAudioContext.createOscillator).toHaveBeenCalled();
+        audioManager.playWinSound();
+        expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, 2);
     });
 
-    test('stopSpinLoop should clear interval and restore ambience', () => {
-        audioManager.toggleMute();
-        audioManager.startSpinLoop();
-        audioManager.stopSpinLoop();
-        expect(audioManager.spinInterval).toBeNull();
-        expect(mockGainNode.gain.setTargetAtTime).toHaveBeenCalledWith(0.05, 0, 0.5);
+    test('playBigWinSound should play multiple segments', async () => {
+        await audioManager.toggleMute();
+        audioManager.buffers = { winning: mockAudioBuffer, clap: mockAudioBuffer };
+        
+        audioManager.playBigWinSound();
+        // winning.mp3 0-4s
+        expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, 4);
+        // clap.mp3 4-8s
+        expect(mockBufferSource.start).toHaveBeenCalledWith(0, 4, 4);
     });
 
-    test('should schedule and play random chimes', () => {
-        audioManager.toggleMute(); // This enables sound and starts ambience/chimes
-        
-        const playToneSpy = jest.spyOn(audioManager, '_playTone');
-        
-        // Fast forward 16 seconds (max delay is 15s)
-        jest.advanceTimersByTime(16000);
-        
-        expect(playToneSpy).toHaveBeenCalled();
-        expect(playToneSpy.mock.calls[0][2]).toBe('sine');
-    });
-
-    test('should not play sounds when muted', () => {
+    test('should not play when muted', async () => {
         audioManager.isMuted = true;
-        mockAudioContext.createOscillator.mockClear();
-        audioManager._playTone(440, 1);
-        expect(mockAudioContext.createOscillator).not.toHaveBeenCalled();
+        audioManager._playBuffer('winning');
+        expect(mockAudioContext.createBufferSource).not.toHaveBeenCalled();
     });
 });
