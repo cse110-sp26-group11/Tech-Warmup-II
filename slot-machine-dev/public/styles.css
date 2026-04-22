@@ -86,15 +86,170 @@ header {
     transform: scale(0.9);
 }
 
-.mode-badge {
-    background-color: var(--color-red);
-    color: var(--color-white);
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 0.8rem;
+.user-info-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
     margin-bottom: 10px;
-    border: 1px solid var(--color-white);
+}
+
+.username-display {
+    font-weight: bold;
+    color: var(--color-gold);
+    font-size: 0.9rem;
+}
+
+.info-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: var(--color-gold);
+    color: var(--color-black);
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 16px;
+    text-align: center;
+    cursor: help;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.cash-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-cash {
+    background-color: var(--color-black);
+    border: 1px solid var(--color-gold);
+    color: var(--color-gold);
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cash:hover {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+}
+
+/* Auth Modal Styles */
+.auth-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--color-black);
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    color: var(--color-gray);
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.auth-tab.active {
+    color: var(--color-gold);
+    border-bottom: 3px solid var(--color-gold);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-form input {
+    background: var(--color-black);
+    border: 1px solid var(--color-gold);
+    color: var(--color-white);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.success-text {
+    color: var(--color-green);
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Broke Modal Styles */
+.refill-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.refill-option {
+    background: var(--color-black);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--color-gold);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.refill-option h3 {
+    color: var(--color-gold);
+    margin-top: 0;
+}
+
+#math-challenges {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.math-problem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.math-problem input {
+    width: 60px;
+    background: #222;
+    border: 1px solid #444;
+    color: white;
+    padding: 5px;
+    text-align: center;
+}
+
+.math-problem.wrong input {
+    border-color: var(--color-red);
+    background: #311;
+}
+
+.ad-container {
+    height: 100px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px 0;
+    border: 1px dashed var(--color-gray);
+}
+
+@media (max-width: 600px) {
+    .refill-options {
+        grid-template-columns: 1fr;
+    }
 }
 
 .gambling-banner {

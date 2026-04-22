@@ -102,9 +102,21 @@ class SlotEngine {
         const payout = this.evaluate(symbols);
         return { symbols, payout };
     }
+    /**
+     * Evaluates the spin result for wins.
+     * @description BUG FIX: Only pays out for exact 3-symbol matches.
+     * @param {string[]} symbols 
+     * @returns {number} Payout multiplier.
+     */
     evaluate(symbols) {
-        for (const entry of this.paytable) {
-            if (symbols.every((s, i) => s === entry.symbols[i])) return entry.payout;
+        // Strict match check: all 3 symbols must be identical
+        if (symbols[0] === symbols[1] && symbols[1] === symbols[2]) {
+            for (const entry of this.paytable) {
+                // Find matching entry in paytable
+                if (symbols[0] === entry.symbols[0]) {
+                    return entry.payout;
+                }
+            }
         }
         return 0;
     }
@@ -120,12 +132,9 @@ class GameController {
     isEligibleForRescue() {
         return this.wallet.getBalance() < 10;
     }
-    claimRescueFunds() {
-        if (!this.isEligibleForRescue()) {
-            throw new Error('Balance must be below 10 coins to claim rescue funds');
-        }
-        this.wallet.addCoins(500);
-        return 500;
+    claimRescueFunds(amount) {
+        this.wallet.addCoins(amount);
+        return amount;
     }
     playSpin(betAmount) {
         this.wallet.deductCoins(betAmount);
@@ -191,18 +200,19 @@ const audioManager = new AudioManager();
 
 /** @type {'social' | 'gambling' | null} */
 let currentMode = null;
+/** @type {string | null} */
+let currentUser = null;
 
 // --- DOM Elements ---
 const levelEl = document.getElementById('current-level');
 const balanceEl = document.getElementById('current-balance');
 const balanceLabel = document.getElementById('balance-label');
 const spinBtn = document.getElementById('spin-button');
-const rescueBtn = document.getElementById('rescue-button');
 const statsBtn = document.getElementById('stats-button');
-const rulesBtn = document.getElementById('rules-button');
 const closeStatsBtn = document.getElementById('close-stats');
-const closeRulesBtn = document.getElementById('close-rules');
 const statsModal = document.getElementById('stats-modal');
+const rulesBtn = document.getElementById('rules-button');
+const closeRulesBtn = document.getElementById('close-rules');
 const rulesModal = document.getElementById('rules-modal');
 const betInput = document.getElementById('bet-amount');
 const betLabel = document.getElementById('bet-label');
@@ -211,6 +221,14 @@ const celebrationOverlay = document.getElementById('celebration-overlay');
 const confettiCanvas = document.getElementById('confetti-canvas');
 const audioToggleBtn = document.getElementById('audio-toggle');
 const modeSwitchBtn = document.getElementById('mode-switch-button');
+const usernameDisplay = document.getElementById('username-display');
+const modeBadge = document.getElementById('mode-badge');
+const gamblingBanner = document.getElementById('gambling-banner');
+const footerDisclaimer = document.getElementById('footer-disclaimer');
+const cashButtonsContainer = document.getElementById('cash-buttons');
+const cashInBtn = document.getElementById('cash-in-button');
+const cashOutBtn = document.getElementById('cash-out-button');
+
 const reelContainer = document.getElementById('reel-container');
 const reels = [
     document.getElementById('reel-0'),
@@ -218,21 +236,32 @@ const reels = [
     document.getElementById('reel-2')
 ];
 
-// Mode elements
-const modeModal = document.getElementById('mode-modal');
-const socialModeBtn = document.getElementById('social-mode-btn');
-const gamblingModeBtn = document.getElementById('gambling-mode-btn');
-const verificationModal = document.getElementById('verification-modal');
-const ageCheckbox = document.getElementById('age-checkbox');
-const idUpload = document.getElementById('id-upload');
-const idPreview = document.getElementById('id-preview');
-const verifySubmit = document.getElementById('verify-submit');
-const verificationError = document.getElementById('verification-error');
-const verifyingMsg = document.getElementById('verifying-msg');
-const modeBadge = document.getElementById('mode-badge');
-const gamblingBanner = document.getElementById('gambling-banner');
-const cashoutBtn = document.getElementById('cashout-button');
-const footerDisclaimer = document.getElementById('footer-disclaimer');
+// Auth Modal elements
+const authModal = document.getElementById('auth-modal');
+const loginTab = document.getElementById('login-tab');
+const registerTab = document.getElementById('register-tab');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const authError = document.getElementById('auth-error');
+
+// Cash In Modal elements
+const cashInModal = document.getElementById('cash-in-modal');
+const cashInAmountInput = document.getElementById('cash-in-amount');
+const cashInSubmit = document.getElementById('cash-in-submit');
+const cashInCancel = document.getElementById('cash-in-cancel');
+const cashInError = document.getElementById('cash-in-error');
+const cashInSuccess = document.getElementById('cash-in-success');
+
+// Broke Modal elements
+const brokeModal = document.getElementById('broke-modal');
+const mathChallenges = document.getElementById('math-challenges');
+const mathSubmit = document.getElementById('math-submit');
+const adRefillOption = document.getElementById('ad-refill-option');
+const adContainer = document.getElementById('ad-container');
+const adCountdown = document.getElementById('ad-countdown');
+const adStartBtn = document.getElementById('ad-start');
+const refillError = document.getElementById('refill-error');
+const mathRewardText = document.getElementById('math-reward-text');
 
 // --- Audio Initialization ---
 function updateAudioButton() {
@@ -249,13 +278,14 @@ audioToggleBtn.addEventListener('click', async () => {
 
 /**
  * Saves the current game state to localStorage.
- * @description Stores currentMode, balance, level, xp, and statistics.
+ * @description Stores currentMode, currentUser, balance, level, xp, and statistics.
  */
 function saveGameState() {
     if (!currentMode) return;
     
     const state = {
         currentMode,
+        currentUser,
         balance: wallet.getBalance(),
         level: leveling.getLevel(),
         xp: leveling.getXP(),
@@ -276,6 +306,7 @@ function loadGameState() {
     try {
         const state = JSON.parse(saved);
         currentMode = state.currentMode;
+        currentUser = state.currentUser;
         wallet.setBalance(state.balance);
         leveling.setLevel(state.level, state.xp);
         gameController.stats.setStats(state.stats);
@@ -302,25 +333,27 @@ function loadGameState() {
 
 /**
  * Resets the game state and clears persistence.
- * @description Resets all player progress and clears localStorage.
+ * @description Resets all player progress and clears session localStorage.
  */
 function resetGameState() {
     localStorage.removeItem('slot_machine_session');
     currentMode = null;
+    currentUser = null;
     wallet.setBalance(1000);
     leveling.setLevel(1, 0);
     gameController.stats.setStats({ totalSpins: 0, biggestWin: 0, totalCoinsWon: 0 });
     
-    // Reset UI to default social look
+    // Reset UI
     modeBadge.classList.add('hidden');
     gamblingBanner.classList.add('hidden');
+    usernameDisplay.classList.add('hidden');
+    cashButtonsContainer.classList.add('hidden');
     balanceLabel.textContent = 'Coins';
     betLabel.textContent = 'Bet:';
     betInput.min = '1';
     betInput.step = '5';
     betInput.max = '';
     betInput.value = '10';
-    if (cashoutBtn) cashoutBtn.classList.add('hidden');
     footerDisclaimer.textContent = 'NO REAL MONEY REQUIRED. This is a social casino for entertainment purposes only.';
     
     updateUI({
@@ -329,7 +362,48 @@ function resetGameState() {
         stats: gameController.stats.getStats()
     });
     
-    modeModal.classList.remove('hidden');
+    const modeModal = document.getElementById('mode-modal');
+    if (modeModal) modeModal.classList.remove('hidden');
+}
+
+// --- Auth Simulation Logic ---
+
+/**
+ * Gets all registered users.
+ * @returns {Array} Array of user objects.
+ */
+function getUsers() {
+    return JSON.parse(localStorage.getItem('slotUsers') || '[]');
+}
+
+/**
+ * Registers a new user.
+ * @param {string} username 
+ * @param {string} password 
+ * @returns {boolean} Success.
+ */
+function registerUser(username, password) {
+    const users = getUsers();
+    if (users.find(u => u.username === username)) return false;
+    users.push({ username, password });
+    localStorage.setItem('slotUsers', JSON.stringify(users));
+    return true;
+}
+
+/**
+ * Logs in a user.
+ * @param {string} username 
+ * @param {string} password 
+ * @returns {boolean} Success.
+ */
+function loginUser(username, password) {
+    const users = getUsers();
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+        currentUser = username;
+        return true;
+    }
+    return false;
 }
 
 // --- Visual Effects Logic ---
@@ -401,13 +475,6 @@ function updateUI(state) {
 
     balanceEl.textContent = `${prefix}${state.newBalance}`;
     levelEl.textContent = state.level;
-    
-    // Toggle Rescue Button visibility
-    if (gameController.isEligibleForRescue()) {
-        rescueBtn.classList.remove('hidden');
-    } else {
-        rescueBtn.classList.add('hidden');
-    }
 
     if (state.symbols) {
         state.symbols.forEach((symbol, i) => {
@@ -436,6 +503,13 @@ function updateUI(state) {
             audioManager.playBigWinSound();
         }
 
+        // Check for "Broke" state after spin ends
+        if (gameController.isEligibleForRescue()) {
+            setTimeout(() => {
+                showBrokeModal();
+            }, 1000);
+        }
+
         // Remove flash classes after animation finishes
         setTimeout(() => {
             reelContainer.classList.remove('win-flash', 'lose-flash');
@@ -456,8 +530,10 @@ function updateUI(state) {
  */
 function enterSocialMode(skipSave = false) {
     currentMode = 'social';
-    modeModal.classList.add('hidden');
+    document.getElementById('mode-modal').classList.add('hidden');
     messageEl.textContent = 'Welcome back to Social Mode!';
+    adRefillOption.classList.remove('hidden');
+    mathRewardText.textContent = '200 coins';
     if (!skipSave) saveGameState();
 }
 
@@ -469,56 +545,207 @@ function enterGamblingMode(skipSave = false) {
     currentMode = 'gambling';
     modeBadge.classList.remove('hidden');
     gamblingBanner.classList.remove('hidden');
+    usernameDisplay.textContent = `👤 ${currentUser}`;
+    usernameDisplay.classList.remove('hidden');
+    cashButtonsContainer.classList.remove('hidden');
     balanceLabel.textContent = 'USD $';
     betLabel.textContent = 'Bet ($):';
     betInput.min = '0.25';
     betInput.step = '0.25';
     betInput.max = '100';
     if (!skipSave) betInput.value = '1.00';
-    if (cashoutBtn) cashoutBtn.classList.remove('hidden');
     footerDisclaimer.textContent = '⚠️ Gambling involves financial risk. Must be 18+. Play responsibly. This is a DEMO only.';
-    verificationModal.classList.add('hidden');
-    modeModal.classList.add('hidden');
-    messageEl.textContent = 'Welcome to Gambling Mode! Good Luck!';
+    
+    adRefillOption.classList.add('hidden');
+    mathRewardText.textContent = '$20';
+
+    const verificationModal = document.getElementById('verification-modal');
+    if (verificationModal) verificationModal.classList.add('hidden');
+    document.getElementById('mode-modal').classList.add('hidden');
+    authModal.classList.add('hidden');
+    
+    messageEl.textContent = `Welcome, ${currentUser}! Good Luck!`;
     if (!skipSave) saveGameState();
 }
 
+// --- Refill Logic ---
+
+/**
+ * Shows the "Broke" modal and generates math problems.
+ */
+function showBrokeModal() {
+    brokeModal.classList.remove('hidden');
+    generateMathChallenges();
+}
+
+/**
+ * Generates 3 random math problems.
+ */
+function generateMathChallenges() {
+    mathChallenges.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        const a = Math.floor(Math.random() * 20) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        const op = Math.random() > 0.5 ? '+' : '-';
+        const result = op === '+' ? a + b : a - b;
+        
+        const problemDiv = document.createElement('div');
+        problemDiv.className = 'math-problem';
+        problemDiv.dataset.answer = result;
+        problemDiv.innerHTML = `
+            <span>${a} ${op} ${b} = </span>
+            <input type="number">
+        `;
+        mathChallenges.appendChild(problemDiv);
+    }
+}
+
+/**
+ * Validates math challenge answers.
+ */
+function validateMathChallenges() {
+    const problems = mathChallenges.querySelectorAll('.math-problem');
+    let allCorrect = true;
+    
+    problems.forEach(p => {
+        const input = p.querySelector('input');
+        if (parseInt(input.value) === parseInt(p.dataset.answer)) {
+            p.classList.remove('wrong');
+        } else {
+            p.classList.add('wrong');
+            allCorrect = false;
+        }
+    });
+
+    if (allCorrect) {
+        const reward = currentMode === 'gambling' ? 20 : 200;
+        gameController.claimRescueFunds(reward);
+        brokeModal.classList.add('hidden');
+        updateUI({
+            newBalance: wallet.getBalance(),
+            level: leveling.getLevel()
+        });
+        saveGameState();
+        alert(`Correct! Received ${currentMode === 'gambling' ? '$' : ''}${reward} refill.`);
+    } else {
+        refillError.textContent = 'Some answers are incorrect. Try again.';
+        refillError.classList.remove('hidden');
+    }
+}
+
+/**
+ * Starts ad simulation.
+ */
+function startAdSimulation() {
+    adStartBtn.disabled = true;
+    adContainer.classList.remove('hidden');
+    let seconds = 5;
+    
+    const interval = setInterval(() => {
+        seconds--;
+        adCountdown.textContent = `Ad playing... ${seconds}`;
+        if (seconds <= 0) {
+            clearInterval(interval);
+            gameController.claimRescueFunds(100);
+            brokeModal.classList.add('hidden');
+            adContainer.classList.add('hidden');
+            adStartBtn.disabled = false;
+            adCountdown.textContent = 'Ad playing... 5';
+            updateUI({
+                newBalance: wallet.getBalance(),
+                level: leveling.getLevel()
+            });
+            saveGameState();
+        }
+    }, 1000);
+}
+
 // --- Event Listeners ---
+
+const socialModeBtn = document.getElementById('social-mode-btn');
+const gamblingModeBtn = document.getElementById('gambling-mode-btn');
 
 socialModeBtn.addEventListener('click', () => {
     enterSocialMode();
 });
 
 gamblingModeBtn.addEventListener('click', () => {
-    modeModal.classList.add('hidden');
-    verificationModal.classList.remove('hidden');
+    document.getElementById('mode-modal').classList.add('hidden');
+    authModal.classList.remove('hidden');
 });
 
-idUpload.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            idPreview.innerHTML = `<img src="${event.target.result}" alt="ID Preview">`;
-        };
-        reader.readAsDataURL(file);
-    } else if (file) {
-        idPreview.innerHTML = `<span>${file.name} uploaded</span>`;
+// Auth Tabs
+loginTab.addEventListener('click', () => {
+    loginTab.classList.add('active');
+    registerTab.classList.remove('active');
+    loginForm.classList.remove('hidden');
+    registerForm.classList.add('hidden');
+});
+
+registerTab.addEventListener('click', () => {
+    registerTab.classList.add('active');
+    loginTab.classList.remove('active');
+    registerForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+});
+
+// Register
+document.getElementById('reg-submit').addEventListener('click', () => {
+    const user = document.getElementById('reg-username').value;
+    const pass = document.getElementById('reg-password').value;
+    const conf = document.getElementById('reg-confirm').value;
+
+    if (!user || !pass) {
+        authError.textContent = 'Username and password required.';
+        authError.classList.remove('hidden');
+        return;
+    }
+    if (pass !== conf) {
+        authError.textContent = 'Passwords do not match.';
+        authError.classList.remove('hidden');
+        return;
+    }
+
+    if (registerUser(user, pass)) {
+        authError.classList.add('hidden');
+        alert('Account created! Please login.');
+        loginTab.click();
+    } else {
+        authError.textContent = 'Username already exists.';
+        authError.classList.remove('hidden');
     }
 });
 
-verifySubmit.addEventListener('click', () => {
-    const isAgeConfirmed = ageCheckbox.checked;
-    const hasIdUploaded = idUpload.files.length > 0;
+// Login
+document.getElementById('login-submit').addEventListener('click', () => {
+    const user = document.getElementById('login-username').value;
+    const pass = document.getElementById('login-password').value;
+
+    if (loginUser(user, pass)) {
+        authError.classList.add('hidden');
+        authModal.classList.add('hidden');
+        document.getElementById('verification-modal').classList.remove('hidden');
+    } else {
+        authError.textContent = 'Invalid credentials.';
+        authError.classList.remove('hidden');
+    }
+});
+
+// Verification (Identity)
+document.getElementById('verify-submit').addEventListener('click', () => {
+    const isAgeConfirmed = document.getElementById('age-checkbox').checked;
+    const hasIdUploaded = document.getElementById('id-upload').files.length > 0;
+    const verifyingMsg = document.getElementById('verifying-msg');
+    const verificationError = document.getElementById('verification-error');
 
     if (isAgeConfirmed && hasIdUploaded) {
         verificationError.classList.add('hidden');
         verifyingMsg.classList.remove('hidden');
-        verifySubmit.disabled = true;
+        document.getElementById('verify-submit').disabled = true;
 
         setTimeout(() => {
             verifyingMsg.classList.add('hidden');
-            verifySubmit.disabled = false;
+            document.getElementById('verify-submit').disabled = false;
             enterGamblingMode();
         }, 2000);
     } else {
@@ -526,11 +753,55 @@ verifySubmit.addEventListener('click', () => {
     }
 });
 
-if (cashoutBtn) {
-    cashoutBtn.addEventListener('click', () => {
-        alert(`Cashing out $${wallet.getBalance()} — In a real app this would process a withdrawal.`);
+// Cash Flow
+cashInBtn.addEventListener('click', () => {
+    cashInModal.classList.remove('hidden');
+    cashInSuccess.classList.add('hidden');
+});
+
+cashInSubmit.addEventListener('click', () => {
+    const amount = parseInt(cashInAmountInput.value);
+    if (isNaN(amount) || amount < 10 || amount > 500) {
+        cashInError.textContent = 'Amount must be between $10 and $500.';
+        cashInError.classList.remove('hidden');
+        return;
+    }
+    
+    // Internally, 1 USD = 1000 coins, but we work with USD in the UI for Gambling Mode
+    wallet.addCoins(amount);
+    saveGameState();
+    updateUI({
+        newBalance: wallet.getBalance(),
+        level: leveling.getLevel()
     });
-}
+    
+    cashInError.classList.add('hidden');
+    cashInSuccess.classList.remove('hidden');
+    setTimeout(() => {
+        cashInModal.classList.add('hidden');
+    }, 1500);
+});
+
+cashInCancel.addEventListener('click', () => {
+    cashInModal.classList.add('hidden');
+});
+
+cashOutBtn.addEventListener('click', () => {
+    const balance = wallet.getBalance();
+    if (confirm(`Cash out $${balance}? This would process a real withdrawal in production.`)) {
+        wallet.setBalance(0);
+        saveGameState();
+        updateUI({
+            newBalance: 0,
+            level: leveling.getLevel()
+        });
+        alert('Cashing out... Goodbye!');
+    }
+});
+
+// Refill Listeners
+mathSubmit.addEventListener('click', validateMathChallenges);
+adStartBtn.addEventListener('click', startAdSimulation);
 
 modeSwitchBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to switch modes? Your current session progress will be reset.')) {
@@ -543,9 +814,7 @@ spinBtn.addEventListener('click', () => {
     
     try {
         if (wallet.getBalance() < bet) {
-            if (gameController.isEligibleForRescue()) {
-                rescueBtn.classList.remove('hidden');
-            }
+            showBrokeModal();
             throw new Error('Insufficient balance');
         }
 
@@ -602,28 +871,6 @@ spinBtn.addEventListener('click', () => {
     }
 });
 
-rescueBtn.addEventListener('click', () => {
-    try {
-        const amount = gameController.claimRescueFunds();
-        const isGambling = currentMode === 'gambling';
-        const prefix = isGambling ? '$' : '';
-        const suffix = isGambling ? '' : ' COINS';
-
-        messageEl.textContent = `RESCUE GRANTED: ${prefix}${amount}${suffix}!`;
-        messageEl.style.color = 'var(--color-gold)';
-        updateUI({
-            newBalance: wallet.getBalance(),
-            level: leveling.getLevel()
-        });
-        saveGameState();
-        triggerCelebration();
-        audioManager.playBigWinSound();
-    } catch (error) {
-        messageEl.textContent = error.message;
-        messageEl.style.color = 'var(--color-red)';
-    }
-});
-
 statsBtn.addEventListener('click', () => {
     const currentStats = gameController.stats.getStats();
     document.getElementById('stat-total-spins').textContent = currentStats.totalSpins;
@@ -644,7 +891,23 @@ closeRulesBtn.addEventListener('click', () => {
     rulesModal.classList.add('hidden');
 });
 
+// Identity verification image preview
+document.getElementById('id-upload').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const preview = document.getElementById('id-preview');
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            preview.innerHTML = `<img src="${event.target.result}" alt="ID Preview">`;
+        };
+        reader.readAsDataURL(file);
+    } else if (file) {
+        preview.innerHTML = `<span>${file.name} uploaded</span>`;
+    }
+});
+
 // Initialize game
 if (!loadGameState()) {
-    modeModal.classList.remove('hidden');
+    const modeModal = document.getElementById('mode-modal');
+    if (modeModal) modeModal.classList.remove('hidden');
 }
