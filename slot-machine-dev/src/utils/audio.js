@@ -10,13 +10,14 @@
 class AudioManager {
     /**
      * Initializes the AudioManager.
-     * Default state is muted until user interaction.
+     * Default state is unmuted (false) unless explicitly saved as muted.
      */
     constructor() {
         /** @type {AudioContext|null} */
         this.ctx = null;
         /** @type {boolean} */
-        this.isMuted = localStorage.getItem('slot_machine_muted') !== 'false';
+        // Default to false if not found
+        this.isMuted = localStorage.getItem('slot_machine_muted') === 'true';
         /** @type {GainNode|null} */
         this.masterGain = null;
         /** @type {GainNode|null} */
@@ -35,11 +36,14 @@ class AudioManager {
         this.isInitializing = false;
         /** @type {number|null} */
         this.atmosphereTimer = null;
+        /** @type {number|null} */
+        this.spinInterval = null;
     }
 
     /**
      * Ensures AudioContext is initialized and assets are loaded.
      * @private
+     * @returns {Promise<void>}
      */
     async _initContext() {
         if (this.isInitialized || this.isInitializing) return;
@@ -69,6 +73,7 @@ class AudioManager {
     /**
      * Loads and decodes all audio assets.
      * @private
+     * @returns {Promise<void>}
      */
     async _loadAssets() {
         const assets = {
@@ -87,7 +92,7 @@ class AudioManager {
                 const arrayBuffer = await response.arrayBuffer();
                 this.buffers[key] = await this.ctx.decodeAudioData(arrayBuffer);
             } catch (e) {
-                console.error(`Failed to load audio asset: ${url}`, e);
+                console.error(`Failed to load audio asset: ${url}. Audio for ${key} will be disabled.`, e);
             }
         });
 
@@ -99,7 +104,7 @@ class AudioManager {
      * @private
      */
     _startAmbience() {
-        if (this.isMuted) return;
+        if (this.isMuted || !this.ctx) return;
 
         // 1. Background Music Loop
         if (this.buffers.background && !this.backgroundSource) {
@@ -150,7 +155,7 @@ class AudioManager {
         if (this.atmosphereTimer) return;
 
         const playRandomClink = () => {
-            if (this.isMuted) {
+            if (this.isMuted || !this.ctx) {
                 this.atmosphereTimer = setTimeout(playRandomClink, 5000 + Math.random() * 10000);
                 return;
             }
@@ -176,7 +181,7 @@ class AudioManager {
      * @private
      */
     _updateVolume() {
-        if (this.masterGain) {
+        if (this.masterGain && this.ctx) {
             const volume = this.isMuted ? 0 : 0.5;
             this.masterGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.01);
         }
@@ -184,7 +189,7 @@ class AudioManager {
 
     /**
      * Toggles the mute state and persists it to localStorage.
-     * @returns {boolean} The new mute state.
+     * @returns {Promise<boolean>} The new mute state.
      */
     async toggleMute() {
         await this._initContext();
@@ -210,9 +215,10 @@ class AudioManager {
      * @param {number} [duration] Duration in seconds.
      * @param {GainNode} [output] Destination node.
      * @private
+     * @returns {AudioBufferSourceNode|null}
      */
     _playBuffer(key, offset = 0, duration = undefined, output = this.masterGain) {
-        if (this.isMuted || !this.buffers[key]) return null;
+        if (this.isMuted || !this.buffers[key] || !this.ctx) return null;
         
         const source = this.ctx.createBufferSource();
         source.buffer = this.buffers[key];
@@ -223,11 +229,12 @@ class AudioManager {
 
     /**
      * Starts the continuous reel spin sound sequence.
-     * Plays a start sound, then enters the drum loop with smooth deceleration.
+     * Plays a start sound, then enters the drum loop with smooth acceleration and deceleration.
+     * @returns {Promise<void>}
      */
     async startSpinLoop() {
         await this._initContext();
-        if (this.isMuted) return;
+        if (this.isMuted || !this.ctx) return;
 
         // Reduce ambience during spin focus
         this.ambienceGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.1);
@@ -239,36 +246,42 @@ class AudioManager {
 
         // 2. Schedule the drum loop to start shortly after
         setTimeout(() => {
-            if (this.isMuted || this.drumSource) return;
+            if (this.isMuted || this.drumSource || !this.buffers.drum) return;
 
             this.drumSource = this.ctx.createBufferSource();
             this.drumSource.buffer = this.buffers.drum;
             this.drumSource.loop = true;
             this.drumSource.connect(this.masterGain);
             
-            // Set initial fast playback rate
-            const startRate = 2.5;
-            const endRate = 0.6;
+            // Set initial slow playback rate
+            const initialRate = 0.8;
+            this.drumSource.playbackRate.setValueAtTime(initialRate, this.ctx.currentTime);
+            this.drumSource.start();
+
             const duration = 6000; // 6 seconds
             let elapsed = 0;
             
-            this.drumSource.playbackRate.setValueAtTime(startRate, this.ctx.currentTime);
-            this.drumSource.start();
-
-            // Smooth deceleration every 100ms
+            // Smooth acceleration and deceleration piecewise every 100ms
             this.spinInterval = setInterval(() => {
                 elapsed += 100;
                 const progress = Math.min(elapsed / duration, 1);
+                let rate;
+
+                if (progress < 0.33) {
+                    // Accelerate phase (0s to ~2s)
+                    rate = 0.8 + (2.5 - 0.8) * (progress / 0.33);
+                } else {
+                    // Decelerate phase (2s to 6s)
+                    rate = 0.6 + (2.5 - 0.6) * Math.pow(1 - ((progress - 0.33) / 0.67), 2);
+                }
                 
-                // rate = 0.6 + (2.5 - 0.6) * Math.pow(1 - progress, 2)
-                const currentRate = endRate + (startRate - endRate) * Math.pow(1 - progress, 2);
-                
-                if (this.drumSource) {
-                    this.drumSource.playbackRate.setTargetAtTime(currentRate, this.ctx.currentTime, 0.05);
+                if (this.drumSource && this.ctx) {
+                    this.drumSource.playbackRate.setTargetAtTime(rate, this.ctx.currentTime, 0.05);
                 }
 
                 if (progress >= 1) {
                     clearInterval(this.spinInterval);
+                    this.spinInterval = null;
                 }
             }, 100);
 
@@ -284,10 +297,14 @@ class AudioManager {
             this.spinInterval = null;
         }
         if (this.drumSource) {
-            this.drumSource.stop();
+            try {
+                this.drumSource.stop();
+            } catch (e) {
+                // Ignore stop errors
+            }
             this.drumSource = null;
         }
-        if (this.ambienceGain) {
+        if (this.ambienceGain && this.ctx) {
             this.ambienceGain.gain.setTargetAtTime(0.2, this.ctx.currentTime, 0.5);
         }
     }

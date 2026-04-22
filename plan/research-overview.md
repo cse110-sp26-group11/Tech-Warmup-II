@@ -144,6 +144,5 @@ Research collected and synthesized by **Siddharth** from the team's Miro board r
 | Zihan | Researched common themes of slot machines and art styles such as visual elements |
 | Yuting | Researched app design and summarized key findings on visual themes, engagement psychology, sound design, and essential slot-machine terminology |
 | Ethan | Researched slot machine game special features/mechanics |
-| Ray | Sourced themed audio files, established testing pipeline, embedded sounds into game stages, and tuned placement for precise feedback.|
-
+| Ray | Sourced audio, tested gameplay, identified bugs, and designed dual-mode architecture with rescue mechanics.|
 | [Name] | [What you researched] |

@@ -289,6 +289,14 @@ const DOM = {
 // --- Helper Functions ---
 
 /**
+ * Updates the audio toggle button icon.
+ * @description Shows speaker icon for unmuted and muted icon for muted.
+ */
+function updateAudioButton() {
+    DOM.audioToggle.textContent = audioManager.isMuted ? '🔇' : '🔊';
+}
+
+/**
  * Safely reads from localStorage with error handling.
  * @param {string} key 
  * @returns {any}
@@ -564,6 +572,11 @@ function validateSudoku() {
 
 // --- Event Handlers ---
 
+DOM.audioToggle.addEventListener('click', async () => {
+    await audioManager.toggleMute();
+    updateAudioButton();
+});
+
 DOM.spinBtn.addEventListener('click', () => {
     const bet = parseFloat(DOM.betInput.value);
     try {
@@ -608,6 +621,7 @@ DOM.modeSwitch.addEventListener('click', () => {
 });
 
 // Initialization
+updateAudioButton();
 if (!loadGameState()) DOM.modeModal.classList.remove('hidden');
 
 DOM.rulesBtn.addEventListener('click', () => DOM.rulesModal.classList.remove('hidden'));
@@ -626,9 +640,6 @@ DOM.gamblingBtn.addEventListener('click', () => {
     DOM.modeModal.classList.add('hidden');
     DOM.auth.modal.classList.remove('hidden');
 });
-
-// Auth, Cash Flow and ID preview logic truncated for brevity but maintained in original spirit
-// (Assuming these are standard listeners like the ones previously implemented)
 
 DOM.auth.loginTab.addEventListener('click', () => {
     DOM.auth.loginTab.classList.add('active'); DOM.auth.regTab.classList.remove('active');
