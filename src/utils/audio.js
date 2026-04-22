@@ -23,8 +23,8 @@ class AudioManager {
         this.ambienceGain = null;
         /** @type {number|null} */
         this.spinInterval = null;
-        /** @type {OscillatorNode|null} */
-        this.ambienceOsc = null;
+        /** @type {OscillatorNode[]} */
+        this.ambienceOscs = [];
     }
 
     /**
@@ -46,17 +46,25 @@ class AudioManager {
     }
 
     /**
-     * Starts a low-volume background ambience.
+     * Starts a low-volume, cheerful background ambience (Major Third harmony).
      * @private
      */
     _startAmbience() {
-        if (this.ambienceOsc) return;
-        this.ambienceOsc = this.ctx.createOscillator();
-        this.ambienceOsc.type = 'sine';
-        this.ambienceOsc.frequency.setValueAtTime(60, this.ctx.currentTime);
+        if (this.ambienceOscs.length > 0) return;
+        
+        // A3 (220Hz) and C#4 (277.18Hz) for a bright major third interval
+        const frequencies = [220, 277.18];
+        
+        frequencies.forEach(freq => {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            osc.connect(this.ambienceGain);
+            osc.start();
+            this.ambienceOscs.push(osc);
+        });
+
         this.ambienceGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-        this.ambienceOsc.connect(this.ambienceGain);
-        this.ambienceOsc.start();
     }
 
     /**
