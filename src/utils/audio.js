@@ -1,11 +1,11 @@
 /**
  * @file audio.js
- * @description Enhanced Audio management system using Web Audio API for synthesized sounds.
+ * @description Enhanced Audio management system using Web Audio API for immersive casino sounds.
  */
 
 /**
  * @class AudioManager
- * @description Manages synthesized audio for the Slot Machine game.
+ * @description Manages synthesized audio and an immersive background soundscape.
  */
 class AudioManager {
     /**
@@ -23,8 +23,10 @@ class AudioManager {
         this.ambienceGain = null;
         /** @type {number|null} */
         this.spinInterval = null;
+        /** @type {number|null} */
+        this.chimeTimeout = null;
         /** @type {OscillatorNode[]} */
-        this.ambienceOscs = [];
+        this.activeNodes = [];
     }
 
     /**
@@ -46,25 +48,93 @@ class AudioManager {
     }
 
     /**
-     * Starts a low-volume, cheerful background ambience (Major Third harmony).
+     * Starts the multi-layered casino soundscape.
      * @private
      */
     _startAmbience() {
-        if (this.ambienceOscs.length > 0) return;
-        
-        // A3 (220Hz) and C#4 (277.18Hz) for a bright major third interval
-        const frequencies = [220, 277.18];
-        
-        frequencies.forEach(freq => {
+        if (this.activeNodes.length > 0) return;
+
+        this._createPad();
+        this._createMurmur();
+        this._scheduleChime();
+        this.ambienceGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+    }
+
+    /**
+     * Creates a warm, evolving pad sound using detuned oscillators and LFO.
+     * @private
+     */
+    _createPad() {
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(400, this.ctx.currentTime);
+        filter.connect(this.ambienceGain);
+
+        // LFO for filter modulation to create movement
+        const lfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
+        lfo.frequency.setValueAtTime(0.2, this.ctx.currentTime);
+        lfoGain.gain.setValueAtTime(200, this.ctx.currentTime);
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+        lfo.start();
+        this.activeNodes.push(lfo);
+
+        // C3, E3, G3 detuned for warmth
+        const freqs = [130.81, 164.81, 196.00];
+        freqs.forEach((f, i) => {
             const osc = this.ctx.createOscillator();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            osc.connect(this.ambienceGain);
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+            osc.detune.setValueAtTime((i - 1) * 5, this.ctx.currentTime);
+            osc.connect(filter);
             osc.start();
-            this.ambienceOscs.push(osc);
+            this.activeNodes.push(osc);
         });
+    }
 
-        this.ambienceGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+    /**
+     * Creates a subtle 'crowd murmur' using filtered white noise.
+     * @private
+     */
+    _createMurmur() {
+        const bufferSize = 2 * this.ctx.sampleRate;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(600, this.ctx.currentTime);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+
+        whiteNoise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.ambienceGain);
+        whiteNoise.start();
+        this.activeNodes.push(whiteNoise);
+    }
+
+    /**
+     * Schedules occasional random chimes in a major pentatonic scale.
+     * @private
+     */
+    _scheduleChime() {
+        const delay = (Math.random() * 7 + 8) * 1000; // 8-15 seconds
+        this.chimeTimeout = setTimeout(() => {
+            if (!this.isMuted) {
+                const notes = [523.25, 587.33, 659.25, 783.99, 880.00]; // C5-A5 Pentatonic
+                const note = notes[Math.floor(Math.random() * notes.length)];
+                this._playTone(note, 2.0, 'sine', 0.05);
+            }
+            this._scheduleChime();
+        }, delay);
     }
 
     /**
@@ -126,14 +196,13 @@ class AudioManager {
         this._initContext();
         if (this.isMuted) return;
 
-        // Duck ambience
         this.ambienceGain.gain.setTargetAtTime(0.01, this.ctx.currentTime, 0.1);
 
         let delay = 100;
         const playClick = () => {
             this._playTone(200, 0.05, 'square', 0.1);
             if (this.spinInterval) {
-                delay = Math.min(delay + 10, 250); // Slow down the clicks
+                delay = Math.min(delay + 10, 250);
                 this.spinInterval = setTimeout(playClick, delay);
             }
         };
