@@ -7,6 +7,7 @@ describe('AudioManager', () => {
     let mockOscillator;
 
     beforeEach(() => {
+        jest.useFakeTimers();
         // Mock window and localStorage for Node environment
         global.window = {
             AudioContext: jest.fn(),
@@ -59,6 +60,7 @@ describe('AudioManager', () => {
     });
 
     afterEach(() => {
+        jest.useRealTimers();
         delete global.window;
         delete global.localStorage;
     });
@@ -84,6 +86,28 @@ describe('AudioManager', () => {
         expect(audioManager.ctx).toBeDefined();
     });
 
+    test('startSpinLoop should duck ambience and start clicks', () => {
+        audioManager.isMuted = false;
+        audioManager.startSpinLoop();
+        
+        // Ducking
+        expect(mockGainNode.gain.setTargetAtTime).toHaveBeenCalledWith(0.01, 0, 0.1);
+        expect(audioManager.spinInterval).toBeDefined();
+        
+        // Fast forward to first click
+        jest.advanceTimersByTime(100);
+        expect(mockAudioContext.createOscillator).toHaveBeenCalled();
+    });
+
+    test('stopSpinLoop should clear interval and restore ambience', () => {
+        audioManager.isMuted = false;
+        audioManager.startSpinLoop();
+        audioManager.stopSpinLoop();
+        
+        expect(audioManager.spinInterval).toBeNull();
+        expect(mockGainNode.gain.setTargetAtTime).toHaveBeenCalledWith(0.05, 0, 0.5);
+    });
+
     test('playSpinSound should call _playTone with correct params', () => {
         const playToneSpy = jest.spyOn(audioManager, '_playTone');
         audioManager.isMuted = false;
@@ -91,22 +115,25 @@ describe('AudioManager', () => {
         expect(playToneSpy).toHaveBeenCalledWith(150, 0.1, 'square');
     });
 
-    test('playWinSound should call _playTone multiple times', (done) => {
+    test('playWinSound should call _playTone multiple times', () => {
         const playToneSpy = jest.spyOn(audioManager, '_playTone');
         audioManager.isMuted = false;
         audioManager.playWinSound();
         
         expect(playToneSpy).toHaveBeenCalledWith(523.25, 0.3);
         
-        setTimeout(() => {
-            expect(playToneSpy).toHaveBeenCalledWith(659.25, 0.3);
-            expect(playToneSpy).toHaveBeenCalledWith(783.99, 0.5);
-            done();
-        }, 300);
+        jest.advanceTimersByTime(100);
+        expect(playToneSpy).toHaveBeenCalledWith(659.25, 0.3);
+        
+        jest.advanceTimersByTime(100);
+        expect(playToneSpy).toHaveBeenCalledWith(783.99, 0.5);
     });
 
     test('should not play sounds when muted', () => {
         audioManager.isMuted = true;
+        // The first oscillator might be created by ambience in _initContext
+        mockAudioContext.createOscillator.mockClear();
+        
         audioManager._playTone(440, 1);
         expect(mockAudioContext.createOscillator).not.toHaveBeenCalled();
     });

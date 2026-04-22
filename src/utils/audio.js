@@ -1,6 +1,6 @@
 /**
  * @file audio.js
- * @description Audio management system using Web Audio API for synthesized game sounds.
+ * @description Enhanced Audio management system using Web Audio API for synthesized sounds.
  */
 
 /**
@@ -19,6 +19,12 @@ class AudioManager {
         this.isMuted = localStorage.getItem('slot_machine_muted') !== 'false';
         /** @type {GainNode|null} */
         this.masterGain = null;
+        /** @type {GainNode|null} */
+        this.ambienceGain = null;
+        /** @type {number|null} */
+        this.spinInterval = null;
+        /** @type {OscillatorNode|null} */
+        this.ambienceOsc = null;
     }
 
     /**
@@ -30,8 +36,27 @@ class AudioManager {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             this.masterGain = this.ctx.createGain();
             this.masterGain.connect(this.ctx.destination);
+            
+            this.ambienceGain = this.ctx.createGain();
+            this.ambienceGain.connect(this.masterGain);
+            
             this._updateVolume();
+            this._startAmbience();
         }
+    }
+
+    /**
+     * Starts a low-volume background ambience.
+     * @private
+     */
+    _startAmbience() {
+        if (this.ambienceOsc) return;
+        this.ambienceOsc = this.ctx.createOscillator();
+        this.ambienceOsc.type = 'sine';
+        this.ambienceOsc.frequency.setValueAtTime(60, this.ctx.currentTime);
+        this.ambienceGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        this.ambienceOsc.connect(this.ambienceGain);
+        this.ambienceOsc.start();
     }
 
     /**
@@ -62,11 +87,13 @@ class AudioManager {
      * @param {number} freq Frequency in Hz.
      * @param {number} duration Duration in seconds.
      * @param {OscillatorType} type Oscillator type ('sine', 'square', etc).
+     * @param {number} vol Volume (0.0 to 1.0).
      * @private
      */
-    _playTone(freq, duration, type = 'sine') {
+    _playTone(freq, duration, type = 'sine', vol = 0.2) {
+        if (this.isMuted) return;
         this._initContext();
-        if (this.isMuted || this.ctx.state === 'suspended') return;
+        if (this.ctx.state === 'suspended') return;
 
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -74,7 +101,7 @@ class AudioManager {
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
 
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
 
         osc.connect(gain);
@@ -85,7 +112,41 @@ class AudioManager {
     }
 
     /**
-     * Plays the spin sound (short click/thud).
+     * Starts the continuous reel spin sound loop with ducked ambience.
+     */
+    startSpinLoop() {
+        this._initContext();
+        if (this.isMuted) return;
+
+        // Duck ambience
+        this.ambienceGain.gain.setTargetAtTime(0.01, this.ctx.currentTime, 0.1);
+
+        let delay = 100;
+        const playClick = () => {
+            this._playTone(200, 0.05, 'square', 0.1);
+            if (this.spinInterval) {
+                delay = Math.min(delay + 10, 250); // Slow down the clicks
+                this.spinInterval = setTimeout(playClick, delay);
+            }
+        };
+        this.spinInterval = setTimeout(playClick, delay);
+    }
+
+    /**
+     * Stops the spin loop and restores ambience.
+     */
+    stopSpinLoop() {
+        if (this.spinInterval) {
+            clearTimeout(this.spinInterval);
+            this.spinInterval = null;
+        }
+        if (this.ctx && this.ambienceGain) {
+            this.ambienceGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.5);
+        }
+    }
+
+    /**
+     * Plays the spin start sound (deprecated in favor of loop).
      */
     playSpinSound() {
         this._playTone(150, 0.1, 'square');

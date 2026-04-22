@@ -331,11 +331,12 @@ spinBtn.addEventListener('click', () => {
         spinBtn.disabled = true;
         messageEl.textContent = 'Spinning...';
         
-        audioManager.playSpinSound();
+        audioManager.startSpinLoop();
         reels.forEach(reel => reel.classList.add('spinning'));
 
         setTimeout(() => {
             const result = gameController.playSpin(bet);
+            audioManager.stopSpinLoop();
             reels.forEach(reel => reel.classList.remove('spinning'));
             updateUI(result);
             spinBtn.disabled = false;
