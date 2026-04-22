@@ -177,9 +177,13 @@ const leveling = new Leveling();
 const gameController = new GameController(engine, wallet, leveling);
 const audioManager = new AudioManager();
 
+/** @type {'social' | 'gambling'} */
+let currentMode = 'social';
+
 // --- DOM Elements ---
 const levelEl = document.getElementById('current-level');
 const balanceEl = document.getElementById('current-balance');
+const balanceLabel = document.getElementById('balance-label');
 const spinBtn = document.getElementById('spin-button');
 const rescueBtn = document.getElementById('rescue-button');
 const statsBtn = document.getElementById('stats-button');
@@ -189,6 +193,7 @@ const closeRulesBtn = document.getElementById('close-rules');
 const statsModal = document.getElementById('stats-modal');
 const rulesModal = document.getElementById('rules-modal');
 const betInput = document.getElementById('bet-amount');
+const betLabel = document.getElementById('bet-label');
 const messageEl = document.getElementById('message-display');
 const celebrationOverlay = document.getElementById('celebration-overlay');
 const confettiCanvas = document.getElementById('confetti-canvas');
@@ -199,6 +204,22 @@ const reels = [
     document.getElementById('reel-1'),
     document.getElementById('reel-2')
 ];
+
+// Mode elements
+const modeModal = document.getElementById('mode-modal');
+const socialModeBtn = document.getElementById('social-mode-btn');
+const gamblingModeBtn = document.getElementById('gambling-mode-btn');
+const verificationModal = document.getElementById('verification-modal');
+const ageCheckbox = document.getElementById('age-checkbox');
+const idUpload = document.getElementById('id-upload');
+const idPreview = document.getElementById('id-preview');
+const verifySubmit = document.getElementById('verify-submit');
+const verificationError = document.getElementById('verification-error');
+const verifyingMsg = document.getElementById('verifying-msg');
+const modeBadge = document.getElementById('mode-badge');
+const gamblingBanner = document.getElementById('gambling-banner');
+const cashoutBtn = document.getElementById('cashout-button');
+const footerDisclaimer = document.getElementById('footer-disclaimer');
 
 // --- Audio Initialization ---
 function updateAudioButton() {
@@ -274,7 +295,10 @@ function triggerCelebration() {
  * @param {Object} state 
  */
 function updateUI(state) {
-    balanceEl.textContent = state.newBalance;
+    const currency = currentMode === 'gambling' ? '$' : '';
+    const unit = currentMode === 'gambling' ? '' : ' COINS';
+    
+    balanceEl.textContent = `${currency}${state.newBalance}`;
     levelEl.textContent = state.level;
     
     // Toggle Rescue Button visibility
@@ -289,23 +313,18 @@ function updateUI(state) {
             reels[i].textContent = symbol;
         });
 
-        const bet = parseInt(betInput.value);
         reelContainer.classList.remove('win-flash', 'lose-flash');
+        messageEl.classList.remove('msg-win', 'msg-lose');
 
         if (state.winAmount > 0) {
-            messageEl.textContent = `WIN: ${state.winAmount} COINS!`;
-            messageEl.style.color = 'var(--color-green)';
+            messageEl.textContent = `YOU WON ${currency}${state.winAmount}${unit}! 🎉`;
+            messageEl.classList.add('msg-win');
             reelContainer.classList.add('win-flash');
-            
-            if (state.winAmount >= bet * 10) {
-                triggerCelebration();
-                audioManager.playBigWinSound();
-            } else {
-                audioManager.playWinSound();
-            }
+            triggerCelebration();
+            audioManager.playWinSound();
         } else {
-            messageEl.textContent = 'Try Again!';
-            messageEl.style.color = 'var(--color-red)';
+            messageEl.textContent = 'No win this time';
+            messageEl.classList.add('msg-lose');
             reelContainer.classList.add('lose-flash');
             audioManager.playLoseSound();
         }
@@ -330,12 +349,78 @@ function updateUI(state) {
     }
 }
 
+/**
+ * Switches the app to Gambling Mode UI.
+ */
+function enterGamblingMode() {
+    currentMode = 'gambling';
+    modeBadge.classList.remove('hidden');
+    gamblingBanner.classList.remove('hidden');
+    balanceLabel.textContent = 'USD $';
+    balanceEl.textContent = `$${wallet.getBalance()}`;
+    betLabel.textContent = 'Bet ($):';
+    betInput.min = '0.25';
+    betInput.step = '0.25';
+    betInput.max = '100';
+    betInput.value = '1.00';
+    cashoutBtn.classList.remove('hidden');
+    footerDisclaimer.textContent = '⚠️ Gambling involves financial risk. Must be 18+. Play responsibly. This is a DEMO only.';
+    verificationModal.classList.add('hidden');
+    messageEl.textContent = 'Welcome to Gambling Mode! Good Luck!';
+}
+
 // --- Event Listeners ---
 
+socialModeBtn.addEventListener('click', () => {
+    currentMode = 'social';
+    modeModal.classList.add('hidden');
+});
+
+gamblingModeBtn.addEventListener('click', () => {
+    modeModal.classList.add('hidden');
+    verificationModal.classList.remove('hidden');
+});
+
+idUpload.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            idPreview.innerHTML = `<img src="${event.target.result}" alt="ID Preview">`;
+        };
+        reader.readAsDataURL(file);
+    } else if (file) {
+        idPreview.innerHTML = `<span>${file.name} uploaded</span>`;
+    }
+});
+
+verifySubmit.addEventListener('click', () => {
+    const isAgeConfirmed = ageCheckbox.checked;
+    const hasIdUploaded = idUpload.files.length > 0;
+
+    if (isAgeConfirmed && hasIdUploaded) {
+        verificationError.classList.add('hidden');
+        verifyingMsg.classList.remove('hidden');
+        verifySubmit.disabled = true;
+
+        setTimeout(() => {
+            verifyingMsg.classList.add('hidden');
+            enterGamblingMode();
+        }, 2000);
+    } else {
+        verificationError.classList.remove('hidden');
+    }
+});
+
+cashoutBtn.addEventListener('click', () => {
+    alert(`Cashing out $${wallet.getBalance()} — In a real app this would process a withdrawal.`);
+});
+
 spinBtn.addEventListener('click', () => {
-    const bet = parseInt(betInput.value);
+    const bet = parseFloat(betInput.value);
     
     try {
+        if (isNaN(bet) || bet <= 0) throw new Error('Invalid bet amount');
         if (wallet.getBalance() < bet) {
             if (gameController.isEligibleForRescue()) {
                 rescueBtn.classList.remove('hidden');
@@ -345,18 +430,45 @@ spinBtn.addEventListener('click', () => {
 
         spinBtn.disabled = true;
         messageEl.textContent = 'Spinning...';
+        messageEl.classList.remove('msg-win', 'msg-lose');
         messageEl.style.color = 'var(--color-white)';
         
         audioManager.startSpinLoop();
-        reels.forEach(reel => reel.classList.add('spinning'));
 
-        setTimeout(() => {
-            const result = gameController.playSpin(bet);
-            audioManager.stopSpinLoop();
-            reels.forEach(reel => reel.classList.remove('spinning'));
-            updateUI(result);
-            spinBtn.disabled = false;
-        }, 1500);
+        // Get result at the start
+        const result = gameController.playSpin(bet);
+        const intervals = [];
+
+        reels.forEach((reel, i) => {
+            reel.classList.add('spinning');
+            
+            // Get symbol pool for this reel
+            const symbolPool = config.reels[i].map(s => s.symbol);
+            
+            // Rapidly cycle symbols every 100ms
+            const interval = setInterval(() => {
+                const randomSymbol = symbolPool[Math.floor(Math.random() * symbolPool.length)];
+                reel.textContent = randomSymbol;
+            }, 100);
+            
+            intervals.push(interval);
+
+            // Staggered stop: 4s, 5s, 6s
+            const stopTime = 4000 + (i * 1000);
+            
+            setTimeout(() => {
+                clearInterval(intervals[i]);
+                reel.classList.remove('spinning');
+                reel.textContent = result.symbols[i];
+                
+                // If this is the last reel, finish the spin
+                if (i === reels.length - 1) {
+                    audioManager.stopSpinLoop();
+                    updateUI(result);
+                    spinBtn.disabled = false;
+                }
+            }, stopTime);
+        });
 
     } catch (error) {
         messageEl.textContent = error.message;
@@ -368,7 +480,9 @@ spinBtn.addEventListener('click', () => {
 rescueBtn.addEventListener('click', () => {
     try {
         const amount = gameController.claimRescueFunds();
-        messageEl.textContent = `RESCUE GRANTED: ${amount} COINS!`;
+        const currency = currentMode === 'gambling' ? '$' : '';
+        const unit = currentMode === 'gambling' ? '' : ' COINS';
+        messageEl.textContent = `RESCUE GRANTED: ${currency}${amount}${unit}!`;
         messageEl.style.color = 'var(--color-gold)';
         updateUI({
             newBalance: wallet.getBalance(),
