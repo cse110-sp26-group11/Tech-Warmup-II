@@ -45,7 +45,8 @@ describe('AudioManager', () => {
             loop: false,
             playbackRate: {
                 setValueAtTime: jest.fn(),
-                linearRampToValueAtTime: jest.fn()
+                linearRampToValueAtTime: jest.fn(),
+                setTargetAtTime: jest.fn()
             },
             connect: jest.fn(),
             start: jest.fn(),
@@ -60,7 +61,8 @@ describe('AudioManager', () => {
             decodeAudioData: jest.fn().mockResolvedValue(mockAudioBuffer),
             currentTime: 0,
             destination: {},
-            state: 'running'
+            state: 'running',
+            resume: jest.fn().mockResolvedValue()
         };
 
         global.fetch = jest.fn().mockResolvedValue({
@@ -93,15 +95,16 @@ describe('AudioManager', () => {
         delete global.fetch;
     });
 
-    test('should initialize and load assets on toggleMute', async () => {
-        await audioManager.toggleMute();
+    test('should initialize and load assets', async () => {
+        // Use private method to initialize for test purposes
+        await audioManager._initContext();
         expect(global.fetch).toHaveBeenCalledTimes(6);
         expect(mockAudioContext.decodeAudioData).toHaveBeenCalled();
         expect(audioManager.isInitialized).toBe(true);
     });
 
     test('startSpinLoop should play start segment and schedule drum', async () => {
-        await audioManager.toggleMute(); // Enable
+        await audioManager._initContext();
         audioManager.buffers = { start: mockAudioBuffer, drum: mockAudioBuffer };
         
         // Clear previous calls from ambience setup
@@ -112,22 +115,29 @@ describe('AudioManager', () => {
         // start.mp3 playback call (offset 0, duration 1.5)
         expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, 1.5);
         
-        // Advance 1s to start drum loop
-        jest.advanceTimersByTime(1001);
+        // Advance 301ms to start drum loop (300ms delay in code)
+        jest.advanceTimersByTime(301);
+        // Drum source start is called without arguments
         expect(mockBufferSource.start).toHaveBeenCalledWith();
     });
 
     test('playWinSound should play segment 0-2s', async () => {
-        await audioManager.toggleMute();
+        await audioManager._initContext();
         audioManager.buffers.winning = mockAudioBuffer;
+        
+        // Clear calls from ambience/atmosphere
+        mockBufferSource.start.mockClear();
         
         audioManager.playWinSound();
         expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, 2);
     });
 
     test('playBigWinSound should play multiple segments', async () => {
-        await audioManager.toggleMute();
+        await audioManager._initContext();
         audioManager.buffers = { winning: mockAudioBuffer, clap: mockAudioBuffer };
+        
+        // Clear calls from ambience/atmosphere
+        mockBufferSource.start.mockClear();
         
         audioManager.playBigWinSound();
         // winning.mp3 0-4s
@@ -137,8 +147,22 @@ describe('AudioManager', () => {
     });
 
     test('should not play when muted', async () => {
+        await audioManager._initContext();
         audioManager.isMuted = true;
+        mockAudioContext.createBufferSource.mockClear();
+        
         audioManager._playBuffer('winning');
         expect(mockAudioContext.createBufferSource).not.toHaveBeenCalled();
+    });
+
+    test('toggleMute should toggle state and save to localStorage', async () => {
+        expect(audioManager.isMuted).toBe(false);
+        await audioManager.toggleMute();
+        expect(audioManager.isMuted).toBe(true);
+        expect(global.localStorage.setItem).toHaveBeenCalledWith('slot_machine_muted', true);
+        
+        await audioManager.toggleMute();
+        expect(audioManager.isMuted).toBe(false);
+        expect(global.localStorage.setItem).toHaveBeenCalledWith('slot_machine_muted', false);
     });
 });
