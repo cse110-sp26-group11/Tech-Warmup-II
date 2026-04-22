@@ -56,6 +56,32 @@ header {
     transition: transform 0.1s;
 }
 
+.mode-switch-button {
+    position: absolute;
+    top: 20px;
+    right: 70px;
+    background: var(--color-black);
+    border: 1px solid var(--color-gray);
+    color: var(--color-gray);
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.mode-switch-button:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+}
+
+.mode-switch-button:active {
+    transform: scale(0.95);
+}
+
 .audio-toggle:active {
     transform: scale(0.9);
 }

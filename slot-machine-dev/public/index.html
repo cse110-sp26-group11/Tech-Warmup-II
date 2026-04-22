@@ -9,6 +9,8 @@
 <body>
     <header>
         <button id="audio-toggle" class="audio-toggle">🔇</button>
+        <button id="mode-switch-button" class="mode-switch-button">🔄 Switch Mode</button>
+        <div id="mode-badge" class="mode-badge hidden">💰 GAMBLING MODE</div>
         <h1>Social Casino Slots</h1>
         <div class="player-stats">
             <div class="stat-box" id="level-display">
@@ -16,11 +18,15 @@
                 <span class="value" id="current-level">1</span>
             </div>
             <div class="stat-box" id="balance-display">
-                <span class="label">Coins</span>
+                <span class="label" id="balance-label">Coins</span>
                 <span class="value" id="current-balance">1000</span>
             </div>
         </div>
     </header>
+
+    <div id="gambling-banner" class="gambling-banner hidden">
+        You are in Gambling Mode. Real money simulation active.
+    </div>
 
     <main>
         <div id="reel-container" class="reel-container">
@@ -37,7 +43,7 @@
 
         <div class="controls">
             <div class="bet-control">
-                <label for="bet-amount">Bet:</label>
+                <label for="bet-amount" id="bet-label">Bet:</label>
                 <input type="number" id="bet-amount" value="10" min="1" step="5">
             </div>
             <div class="button-group">
@@ -101,13 +107,53 @@
             </div>
         </div>
 
+        <!-- Mode Selection Modal -->
+        <div id="mode-modal" class="modal">
+            <div class="modal-content">
+                <h2>Choose Your Mode</h2>
+                <div class="mode-options">
+                    <button id="social-mode-btn" class="btn-mode">
+                        <span class="mode-icon">🎮</span>
+                        <span class="mode-text">Social Mode — Free to Play, No real money</span>
+                    </button>
+                    <button id="gambling-mode-btn" class="btn-mode">
+                        <span class="mode-icon">🎰</span>
+                        <span class="mode-text">Gambling Mode — Real Money, 18+ Only</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Modal -->
+        <div id="verification-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Identity Verification</h2>
+                <div id="verification-steps">
+                    <div class="step">
+                        <label>
+                            <input type="checkbox" id="age-checkbox">
+                            I confirm I am 18 years of age or older
+                        </label>
+                    </div>
+                    <div class="step">
+                        <label for="id-upload">Upload Government ID:</label>
+                        <input type="file" id="id-upload" accept="image/*,application/pdf">
+                        <div id="id-preview" class="id-preview"></div>
+                    </div>
+                    <div id="verification-error" class="error-text hidden">Please complete all steps.</div>
+                    <div id="verifying-msg" class="verifying-text hidden">Verifying...</div>
+                    <button id="verify-submit" class="btn-spin">Verify & Continue</button>
+                </div>
+            </div>
+        </div>
+
         <div id="message-display" class="message-display">
             Good Luck!
         </div>
     </main>
 
     <footer>
-        <p class="disclaimer">NO REAL MONEY REQUIRED. This is a social casino for entertainment purposes only.</p>
+        <p class="disclaimer" id="footer-disclaimer">NO REAL MONEY REQUIRED. This is a social casino for entertainment purposes only.</p>
     </footer>
 
     <!-- Audio Placeholders -->

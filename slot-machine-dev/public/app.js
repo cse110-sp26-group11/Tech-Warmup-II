@@ -11,6 +11,7 @@ class Wallet {
         this._balance = initialBalance;
     }
     getBalance() { return this._balance; }
+    setBalance(amount) { this._balance = amount; }
     addCoins(amount) { this._balance += amount; }
     deductCoins(amount) {
         if (this._balance < amount) throw new Error('Insufficient balance');
@@ -26,6 +27,10 @@ class Leveling {
     }
     getLevel() { return this._level; }
     getXP() { return this._xp; }
+    setLevel(level, xp) {
+        this._level = level;
+        this._xp = xp;
+    }
     addXP(amount, wallet) {
         const initialLevel = this._level;
         this._xp += amount;
@@ -69,6 +74,13 @@ class StatisticsTracker {
             biggestWin: this._biggestWin,
             totalCoinsWon: this._totalCoinsWon
         };
+    }
+    setStats(stats) {
+        if (stats) {
+            this._totalSpins = stats.totalSpins || 0;
+            this._biggestWin = stats.biggestWin || 0;
+            this._totalCoinsWon = stats.totalCoinsWon || 0;
+        }
     }
 }
 
@@ -177,8 +189,8 @@ const leveling = new Leveling();
 const gameController = new GameController(engine, wallet, leveling);
 const audioManager = new AudioManager();
 
-/** @type {'social' | 'gambling'} */
-let currentMode = 'social';
+/** @type {'social' | 'gambling' | null} */
+let currentMode = null;
 
 // --- DOM Elements ---
 const levelEl = document.getElementById('current-level');
@@ -198,6 +210,7 @@ const messageEl = document.getElementById('message-display');
 const celebrationOverlay = document.getElementById('celebration-overlay');
 const confettiCanvas = document.getElementById('confetti-canvas');
 const audioToggleBtn = document.getElementById('audio-toggle');
+const modeSwitchBtn = document.getElementById('mode-switch-button');
 const reelContainer = document.getElementById('reel-container');
 const reels = [
     document.getElementById('reel-0'),
@@ -231,6 +244,93 @@ audioToggleBtn.addEventListener('click', async () => {
     await audioManager.toggleMute();
     updateAudioButton();
 });
+
+// --- Persistence Logic ---
+
+/**
+ * Saves the current game state to localStorage.
+ * @description Stores currentMode, balance, level, xp, and statistics.
+ */
+function saveGameState() {
+    if (!currentMode) return;
+    
+    const state = {
+        currentMode,
+        balance: wallet.getBalance(),
+        level: leveling.getLevel(),
+        xp: leveling.getXP(),
+        stats: gameController.stats.getStats()
+    };
+    localStorage.setItem('slot_machine_session', JSON.stringify(state));
+}
+
+/**
+ * Loads the game state from localStorage.
+ * @description Restores previous session if it exists.
+ * @returns {boolean} True if a session was successfully restored.
+ */
+function loadGameState() {
+    const saved = localStorage.getItem('slot_machine_session');
+    if (!saved) return false;
+
+    try {
+        const state = JSON.parse(saved);
+        currentMode = state.currentMode;
+        wallet.setBalance(state.balance);
+        leveling.setLevel(state.level, state.xp);
+        gameController.stats.setStats(state.stats);
+
+        if (currentMode === 'gambling') {
+            enterGamblingMode(true);
+        } else {
+            enterSocialMode(true);
+        }
+        
+        updateUI({
+            newBalance: wallet.getBalance(),
+            level: leveling.getLevel(),
+            stats: gameController.stats.getStats()
+        });
+        
+        return true;
+    } catch (e) {
+        console.error('Failed to load saved state:', e);
+        localStorage.removeItem('slot_machine_session');
+        return false;
+    }
+}
+
+/**
+ * Resets the game state and clears persistence.
+ * @description Resets all player progress and clears localStorage.
+ */
+function resetGameState() {
+    localStorage.removeItem('slot_machine_session');
+    currentMode = null;
+    wallet.setBalance(1000);
+    leveling.setLevel(1, 0);
+    gameController.stats.setStats({ totalSpins: 0, biggestWin: 0, totalCoinsWon: 0 });
+    
+    // Reset UI to default social look
+    modeBadge.classList.add('hidden');
+    gamblingBanner.classList.add('hidden');
+    balanceLabel.textContent = 'Coins';
+    betLabel.textContent = 'Bet:';
+    betInput.min = '1';
+    betInput.step = '5';
+    betInput.max = '';
+    betInput.value = '10';
+    if (cashoutBtn) cashoutBtn.classList.add('hidden');
+    footerDisclaimer.textContent = 'NO REAL MONEY REQUIRED. This is a social casino for entertainment purposes only.';
+    
+    updateUI({
+        newBalance: wallet.getBalance(),
+        level: leveling.getLevel(),
+        stats: gameController.stats.getStats()
+    });
+    
+    modeModal.classList.remove('hidden');
+}
 
 // --- Visual Effects Logic ---
 
@@ -295,10 +395,11 @@ function triggerCelebration() {
  * @param {Object} state 
  */
 function updateUI(state) {
-    const currency = currentMode === 'gambling' ? '$' : '';
-    const unit = currentMode === 'gambling' ? '' : ' COINS';
-    
-    balanceEl.textContent = `${currency}${state.newBalance}`;
+    const isGambling = currentMode === 'gambling';
+    const prefix = isGambling ? '$' : '';
+    const suffix = isGambling ? '' : ' COINS';
+
+    balanceEl.textContent = `${prefix}${state.newBalance}`;
     levelEl.textContent = state.level;
     
     // Toggle Rescue Button visibility
@@ -317,7 +418,7 @@ function updateUI(state) {
         messageEl.classList.remove('msg-win', 'msg-lose');
 
         if (state.winAmount > 0) {
-            messageEl.textContent = `YOU WON ${currency}${state.winAmount}${unit}! 🎉`;
+            messageEl.textContent = `YOU WON ${prefix}${state.winAmount}${suffix}! 🎉`;
             messageEl.classList.add('msg-win');
             reelContainer.classList.add('win-flash');
             triggerCelebration();
@@ -350,30 +451,42 @@ function updateUI(state) {
 }
 
 /**
- * Switches the app to Gambling Mode UI.
+ * Switches the app to Social Mode UI.
+ * @param {boolean} [skipSave=false] Whether to skip saving state.
  */
-function enterGamblingMode() {
+function enterSocialMode(skipSave = false) {
+    currentMode = 'social';
+    modeModal.classList.add('hidden');
+    messageEl.textContent = 'Welcome back to Social Mode!';
+    if (!skipSave) saveGameState();
+}
+
+/**
+ * Switches the app to Gambling Mode UI.
+ * @param {boolean} [skipSave=false] Whether to skip saving state.
+ */
+function enterGamblingMode(skipSave = false) {
     currentMode = 'gambling';
     modeBadge.classList.remove('hidden');
     gamblingBanner.classList.remove('hidden');
     balanceLabel.textContent = 'USD $';
-    balanceEl.textContent = `$${wallet.getBalance()}`;
     betLabel.textContent = 'Bet ($):';
     betInput.min = '0.25';
     betInput.step = '0.25';
     betInput.max = '100';
-    betInput.value = '1.00';
-    cashoutBtn.classList.remove('hidden');
+    if (!skipSave) betInput.value = '1.00';
+    if (cashoutBtn) cashoutBtn.classList.remove('hidden');
     footerDisclaimer.textContent = '⚠️ Gambling involves financial risk. Must be 18+. Play responsibly. This is a DEMO only.';
     verificationModal.classList.add('hidden');
+    modeModal.classList.add('hidden');
     messageEl.textContent = 'Welcome to Gambling Mode! Good Luck!';
+    if (!skipSave) saveGameState();
 }
 
 // --- Event Listeners ---
 
 socialModeBtn.addEventListener('click', () => {
-    currentMode = 'social';
-    modeModal.classList.add('hidden');
+    enterSocialMode();
 });
 
 gamblingModeBtn.addEventListener('click', () => {
@@ -405,6 +518,7 @@ verifySubmit.addEventListener('click', () => {
 
         setTimeout(() => {
             verifyingMsg.classList.add('hidden');
+            verifySubmit.disabled = false;
             enterGamblingMode();
         }, 2000);
     } else {
@@ -412,15 +526,22 @@ verifySubmit.addEventListener('click', () => {
     }
 });
 
-cashoutBtn.addEventListener('click', () => {
-    alert(`Cashing out $${wallet.getBalance()} — In a real app this would process a withdrawal.`);
+if (cashoutBtn) {
+    cashoutBtn.addEventListener('click', () => {
+        alert(`Cashing out $${wallet.getBalance()} — In a real app this would process a withdrawal.`);
+    });
+}
+
+modeSwitchBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to switch modes? Your current session progress will be reset.')) {
+        resetGameState();
+    }
 });
 
 spinBtn.addEventListener('click', () => {
     const bet = parseFloat(betInput.value);
     
     try {
-        if (isNaN(bet) || bet <= 0) throw new Error('Invalid bet amount');
         if (wallet.getBalance() < bet) {
             if (gameController.isEligibleForRescue()) {
                 rescueBtn.classList.remove('hidden');
@@ -429,6 +550,7 @@ spinBtn.addEventListener('click', () => {
         }
 
         spinBtn.disabled = true;
+        modeSwitchBtn.disabled = true;
         messageEl.textContent = 'Spinning...';
         messageEl.classList.remove('msg-win', 'msg-lose');
         messageEl.style.color = 'var(--color-white)';
@@ -465,7 +587,9 @@ spinBtn.addEventListener('click', () => {
                 if (i === reels.length - 1) {
                     audioManager.stopSpinLoop();
                     updateUI(result);
+                    saveGameState();
                     spinBtn.disabled = false;
+                    modeSwitchBtn.disabled = false;
                 }
             }, stopTime);
         });
@@ -474,20 +598,24 @@ spinBtn.addEventListener('click', () => {
         messageEl.textContent = error.message;
         messageEl.style.color = 'var(--color-red)';
         spinBtn.disabled = false;
+        modeSwitchBtn.disabled = false;
     }
 });
 
 rescueBtn.addEventListener('click', () => {
     try {
         const amount = gameController.claimRescueFunds();
-        const currency = currentMode === 'gambling' ? '$' : '';
-        const unit = currentMode === 'gambling' ? '' : ' COINS';
-        messageEl.textContent = `RESCUE GRANTED: ${currency}${amount}${unit}!`;
+        const isGambling = currentMode === 'gambling';
+        const prefix = isGambling ? '$' : '';
+        const suffix = isGambling ? '' : ' COINS';
+
+        messageEl.textContent = `RESCUE GRANTED: ${prefix}${amount}${suffix}!`;
         messageEl.style.color = 'var(--color-gold)';
         updateUI({
             newBalance: wallet.getBalance(),
             level: leveling.getLevel()
         });
+        saveGameState();
         triggerCelebration();
         audioManager.playBigWinSound();
     } catch (error) {
@@ -504,14 +632,19 @@ statsBtn.addEventListener('click', () => {
     statsModal.classList.remove('hidden');
 });
 
-rulesBtn.addEventListener('click', () => {
-    rulesModal.classList.remove('hidden');
-});
-
 closeStatsBtn.addEventListener('click', () => {
     statsModal.classList.add('hidden');
+});
+
+rulesBtn.addEventListener('click', () => {
+    rulesModal.classList.remove('hidden');
 });
 
 closeRulesBtn.addEventListener('click', () => {
     rulesModal.classList.add('hidden');
 });
+
+// Initialize game
+if (!loadGameState()) {
+    modeModal.classList.remove('hidden');
+}
