@@ -119,16 +119,20 @@
                         <button id="math-submit" class="btn-secondary">Submit Answers</button>
                     </div>
 
-                    <div id="ad-refill-option" class="refill-option">
-                        <h3>Option B: Watch Ad</h3>
-                        <p>Watch a 5-second ad to earn 100 coins</p>
-                        <div id="ad-container" class="ad-container hidden">
-                            <div id="ad-countdown">Ad playing... 5</div>
+                    <div class="refill-option">
+                        <h3>Option B: 4x4 Sudoku</h3>
+                        <p>Complete the puzzle to earn <span id="sudoku-reward-text">300 coins</span></p>
+                        <div id="sudoku-grid" class="sudoku-grid">
+                            <!-- Grid generated via JS -->
                         </div>
-                        <button id="ad-start" class="btn-secondary">Watch Ad</button>
+                        <div class="button-group-small">
+                            <button id="sudoku-check" class="btn-secondary">Check Solution</button>
+                            <button id="sudoku-giveup" class="btn-red">Give Up</button>
+                        </div>
                     </div>
                 </div>
                 <div id="refill-error" class="error-text hidden"></div>
+                <button id="broke-close" class="btn-red" style="margin-top: 20px;">Maybe Later</button>
             </div>
         </div>
 

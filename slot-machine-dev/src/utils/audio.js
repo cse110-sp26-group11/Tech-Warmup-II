@@ -223,7 +223,7 @@ class AudioManager {
 
     /**
      * Starts the continuous reel spin sound sequence.
-     * Plays a start sound, then enters the drum loop.
+     * Plays a start sound, then enters the drum loop with smooth deceleration.
      */
     async startSpinLoop() {
         await this._initContext();
@@ -246,10 +246,32 @@ class AudioManager {
             this.drumSource.loop = true;
             this.drumSource.connect(this.masterGain);
             
-            this.drumSource.playbackRate.setValueAtTime(1.2, this.ctx.currentTime);
-            this.drumSource.playbackRate.linearRampToValueAtTime(0.6, this.ctx.currentTime + 1.5);
+            // Set initial fast playback rate
+            const startRate = 2.5;
+            const endRate = 0.6;
+            const duration = 6000; // 6 seconds
+            let elapsed = 0;
             
+            this.drumSource.playbackRate.setValueAtTime(startRate, this.ctx.currentTime);
             this.drumSource.start();
+
+            // Smooth deceleration every 100ms
+            this.spinInterval = setInterval(() => {
+                elapsed += 100;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // rate = 0.6 + (2.5 - 0.6) * Math.pow(1 - progress, 2)
+                const currentRate = endRate + (startRate - endRate) * Math.pow(1 - progress, 2);
+                
+                if (this.drumSource) {
+                    this.drumSource.playbackRate.setTargetAtTime(currentRate, this.ctx.currentTime, 0.05);
+                }
+
+                if (progress >= 1) {
+                    clearInterval(this.spinInterval);
+                }
+            }, 100);
+
         }, 300); // 300ms delay for the pull sound to feel distinct
     }
 
@@ -257,6 +279,10 @@ class AudioManager {
      * Stops the spin sequence and restores ambience.
      */
     stopSpinLoop() {
+        if (this.spinInterval) {
+            clearInterval(this.spinInterval);
+            this.spinInterval = null;
+        }
         if (this.drumSource) {
             this.drumSource.stop();
             this.drumSource = null;

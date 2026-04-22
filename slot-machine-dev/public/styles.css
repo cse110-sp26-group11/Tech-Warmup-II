@@ -246,6 +246,79 @@ header {
     border: 1px dashed var(--color-gray);
 }
 
+.sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: #444;
+    border: 2px solid var(--color-gold);
+    margin: 15px auto;
+    width: 160px;
+}
+
+.sudoku-cell {
+    width: 38px;
+    height: 38px;
+    background: #000;
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.sudoku-cell input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--color-gold);
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    outline: none;
+}
+
+.sudoku-cell.prefilled {
+    color: var(--color-white);
+    background: #222;
+}
+
+.sudoku-cell.wrong {
+    background: #411;
+}
+
+.sudoku-cell.wrong input {
+    color: var(--color-red);
+}
+
+/* 2x2 box borders */
+.sudoku-cell:nth-child(2n) {
+    border-right: 1px solid #333;
+}
+
+.sudoku-cell:nth-child(4n) {
+    border-right: none;
+}
+
+.sudoku-cell:nth-child(n+5):nth-child(-n+8),
+.sudoku-cell:nth-child(n+13):nth-child(-n+16) {
+    border-top: 2px solid #444;
+}
+
+.button-group-small {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.button-group-small button {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
 @media (max-width: 600px) {
     .refill-options {
         grid-template-columns: 1fr;

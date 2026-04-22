@@ -109,15 +109,20 @@ class SlotEngine {
      * @returns {number} Payout multiplier.
      */
     evaluate(symbols) {
-        // Strict match check: all 3 symbols must be identical
+        console.log('Evaluating symbols:', symbols);
+        
+        // Exact 3-symbol match check
         if (symbols[0] === symbols[1] && symbols[1] === symbols[2]) {
+            const matchSymbol = symbols[0];
             for (const entry of this.paytable) {
-                // Find matching entry in paytable
-                if (symbols[0] === entry.symbols[0]) {
+                if (matchSymbol === entry.symbols[0]) {
+                    console.log('WIN! Payout multiplier:', entry.payout);
                     return entry.payout;
                 }
             }
         }
+        
+        console.log('No win.');
         return 0;
     }
 }
@@ -256,12 +261,13 @@ const cashInSuccess = document.getElementById('cash-in-success');
 const brokeModal = document.getElementById('broke-modal');
 const mathChallenges = document.getElementById('math-challenges');
 const mathSubmit = document.getElementById('math-submit');
-const adRefillOption = document.getElementById('ad-refill-option');
-const adContainer = document.getElementById('ad-container');
-const adCountdown = document.getElementById('ad-countdown');
-const adStartBtn = document.getElementById('ad-start');
+const sudokuGrid = document.getElementById('sudoku-grid');
+const sudokuCheckBtn = document.getElementById('sudoku-check');
+const sudokuGiveUpBtn = document.getElementById('sudoku-giveup');
+const brokeCloseBtn = document.getElementById('broke-close');
 const refillError = document.getElementById('refill-error');
 const mathRewardText = document.getElementById('math-reward-text');
+const sudokuRewardText = document.getElementById('sudoku-reward-text');
 
 // --- Audio Initialization ---
 function updateAudioButton() {
@@ -503,13 +509,6 @@ function updateUI(state) {
             audioManager.playBigWinSound();
         }
 
-        // Check for "Broke" state after spin ends
-        if (gameController.isEligibleForRescue()) {
-            setTimeout(() => {
-                showBrokeModal();
-            }, 1000);
-        }
-
         // Remove flash classes after animation finishes
         setTimeout(() => {
             reelContainer.classList.remove('win-flash', 'lose-flash');
@@ -532,8 +531,8 @@ function enterSocialMode(skipSave = false) {
     currentMode = 'social';
     document.getElementById('mode-modal').classList.add('hidden');
     messageEl.textContent = 'Welcome back to Social Mode!';
-    adRefillOption.classList.remove('hidden');
     mathRewardText.textContent = '200 coins';
+    sudokuRewardText.textContent = '300 coins';
     if (!skipSave) saveGameState();
 }
 
@@ -556,8 +555,8 @@ function enterGamblingMode(skipSave = false) {
     if (!skipSave) betInput.value = '1.00';
     footerDisclaimer.textContent = '⚠️ Gambling involves financial risk. Must be 18+. Play responsibly. This is a DEMO only.';
     
-    adRefillOption.classList.add('hidden');
     mathRewardText.textContent = '$20';
+    sudokuRewardText.textContent = '$30';
 
     const verificationModal = document.getElementById('verification-modal');
     if (verificationModal) verificationModal.classList.add('hidden');
@@ -571,11 +570,12 @@ function enterGamblingMode(skipSave = false) {
 // --- Refill Logic ---
 
 /**
- * Shows the "Broke" modal and generates math problems.
+ * Shows the "Broke" modal and generates challenges.
  */
 function showBrokeModal() {
     brokeModal.classList.remove('hidden');
     generateMathChallenges();
+    generateSudoku();
 }
 
 /**
@@ -634,30 +634,84 @@ function validateMathChallenges() {
 }
 
 /**
- * Starts ad simulation.
+ * Generates a simple 4x4 Sudoku puzzle.
  */
-function startAdSimulation() {
-    adStartBtn.disabled = true;
-    adContainer.classList.remove('hidden');
-    let seconds = 5;
+function generateSudoku() {
+    sudokuGrid.innerHTML = '';
+    // Simple pre-defined 4x4 pattern that can be randomized by row/col swaps
+    // 1 2 3 4
+    // 3 4 1 2
+    // 2 1 4 3
+    // 4 3 2 1
+    const base = [
+        [1, 2, 3, 4],
+        [3, 4, 1, 2],
+        [2, 1, 4, 3],
+        [4, 3, 2, 1]
+    ];
     
-    const interval = setInterval(() => {
-        seconds--;
-        adCountdown.textContent = `Ad playing... ${seconds}`;
-        if (seconds <= 0) {
-            clearInterval(interval);
-            gameController.claimRescueFunds(100);
-            brokeModal.classList.add('hidden');
-            adContainer.classList.add('hidden');
-            adStartBtn.disabled = false;
-            adCountdown.textContent = 'Ad playing... 5';
-            updateUI({
-                newBalance: wallet.getBalance(),
-                level: leveling.getLevel()
-            });
-            saveGameState();
+    // Simple shuffle
+    const pattern = base.sort(() => Math.random() - 0.5);
+    
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'sudoku-cell';
+            const value = pattern[r][c];
+            
+            // Show ~50% of cells
+            if (Math.random() > 0.5) {
+                cell.textContent = value;
+                cell.classList.add('prefilled');
+                cell.dataset.correct = value;
+            } else {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.max = '4';
+                cell.appendChild(input);
+                cell.dataset.correct = value;
+            }
+            sudokuGrid.appendChild(cell);
         }
-    }, 1000);
+    }
+}
+// Note: Loop index 'i' in generateSudoku was a typo, fixing in final write.
+
+/**
+ * Validates Sudoku solution.
+ */
+function validateSudoku() {
+    const cells = sudokuGrid.querySelectorAll('.sudoku-cell');
+    let allCorrect = true;
+    
+    cells.forEach(cell => {
+        const correct = cell.dataset.correct;
+        const input = cell.querySelector('input');
+        if (input) {
+            if (input.value === correct) {
+                cell.classList.remove('wrong');
+            } else {
+                cell.classList.add('wrong');
+                allCorrect = false;
+            }
+        }
+    });
+
+    if (allCorrect) {
+        const reward = currentMode === 'gambling' ? 30 : 300;
+        gameController.claimRescueFunds(reward);
+        brokeModal.classList.add('hidden');
+        updateUI({
+            newBalance: wallet.getBalance(),
+            level: leveling.getLevel()
+        });
+        saveGameState();
+        alert(`Sudoku Complete! Received ${currentMode === 'gambling' ? '$' : ''}${reward} refill.`);
+    } else {
+        refillError.textContent = 'Sudoku has errors. Correct the red cells.';
+        refillError.classList.remove('hidden');
+    }
 }
 
 // --- Event Listeners ---
@@ -767,7 +821,6 @@ cashInSubmit.addEventListener('click', () => {
         return;
     }
     
-    // Internally, 1 USD = 1000 coins, but we work with USD in the UI for Gambling Mode
     wallet.addCoins(amount);
     saveGameState();
     updateUI({
@@ -801,7 +854,18 @@ cashOutBtn.addEventListener('click', () => {
 
 // Refill Listeners
 mathSubmit.addEventListener('click', validateMathChallenges);
-adStartBtn.addEventListener('click', startAdSimulation);
+sudokuCheckBtn.addEventListener('click', validateSudoku);
+sudokuGiveUpBtn.addEventListener('click', () => {
+    brokeModal.classList.add('hidden');
+    const minBet = currentMode === 'gambling' ? 0.25 : 1;
+    betInput.value = minBet;
+});
+
+brokeCloseBtn.addEventListener('click', () => {
+    brokeModal.classList.add('hidden');
+    const minBet = currentMode === 'gambling' ? 0.25 : 1;
+    betInput.value = minBet;
+});
 
 modeSwitchBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to switch modes? Your current session progress will be reset.')) {
@@ -864,8 +928,10 @@ spinBtn.addEventListener('click', () => {
         });
 
     } catch (error) {
-        messageEl.textContent = error.message;
-        messageEl.style.color = 'var(--color-red)';
+        if (error.message !== 'Insufficient balance') {
+            messageEl.textContent = error.message;
+            messageEl.style.color = 'var(--color-red)';
+        }
         spinBtn.disabled = false;
         modeSwitchBtn.disabled = false;
     }
