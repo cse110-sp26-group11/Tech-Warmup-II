@@ -9,6 +9,9 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'script'
   },
+  globals: {
+    AudioManager: 'readonly'
+  },
   rules: {
     'no-var': 'error',
     'prefer-const': 'error',

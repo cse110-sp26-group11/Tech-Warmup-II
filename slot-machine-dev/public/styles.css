@@ -248,8 +248,45 @@ main {
 
 .button-group {
     display: flex;
+    flex-direction: column;
     gap: 15px;
     align-items: center;
+}
+
+.secondary-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.rules-scroll {
+    text-align: left;
+    max-height: 350px;
+    overflow-y: auto;
+    margin: 20px 0;
+    padding-right: 10px;
+}
+
+.rules-scroll h3 {
+    color: var(--color-gold);
+    border-bottom: 1px solid var(--color-gold);
+    padding-bottom: 5px;
+}
+
+.paytable-list {
+    list-style: none;
+    padding: 0;
+}
+
+.paytable-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+    font-size: 1.1rem;
+}
+
+.paytable-list span {
+    font-size: 1.5rem;
 }
 
 .btn-secondary {

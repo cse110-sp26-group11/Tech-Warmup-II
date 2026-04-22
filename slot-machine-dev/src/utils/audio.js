@@ -27,10 +27,14 @@ class AudioManager {
         this.backgroundSource = null;
         /** @type {AudioBufferSourceNode|null} */
         this.drumSource = null;
+        /** @type {OscillatorNode|null} */
+        this.humOscillator = null;
         /** @type {boolean} */
         this.isInitialized = false;
         /** @type {boolean} */
         this.isInitializing = false;
+        /** @type {number|null} */
+        this.atmosphereTimer = null;
     }
 
     /**
@@ -52,6 +56,7 @@ class AudioManager {
             this._updateVolume();
             await this._loadAssets();
             this._startAmbience();
+            this._startAtmosphere();
             
             this.isInitialized = true;
         } catch (error) {
@@ -71,7 +76,8 @@ class AudioManager {
             drum: 'sounds/drum.wav',
             winning: 'sounds/winning.mp3',
             losing: 'sounds/losing.wav',
-            clap: 'sounds/clap.mp3'
+            clap: 'sounds/clap.mp3',
+            start: 'sounds/start.mp3'
         };
 
         const loadPromises = Object.entries(assets).map(async ([key, url]) => {
@@ -89,19 +95,80 @@ class AudioManager {
     }
 
     /**
-     * Starts the background music loop.
+     * Starts the background music loop and mechanical hum.
      * @private
      */
     _startAmbience() {
-        if (this.isMuted || !this.buffers.background || this.backgroundSource) return;
-        
-        this.backgroundSource = this.ctx.createBufferSource();
-        this.backgroundSource.buffer = this.buffers.background;
-        this.backgroundSource.loop = true;
-        this.backgroundSource.connect(this.ambienceGain);
-        
-        this.ambienceGain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-        this.backgroundSource.start();
+        if (this.isMuted) return;
+
+        // 1. Background Music Loop
+        if (this.buffers.background && !this.backgroundSource) {
+            this.backgroundSource = this.ctx.createBufferSource();
+            this.backgroundSource.buffer = this.buffers.background;
+            this.backgroundSource.loop = true;
+            this.backgroundSource.connect(this.ambienceGain);
+            
+            this.ambienceGain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+            this.backgroundSource.start();
+        }
+
+        // 2. Mechanical Hum (Classic Slot Machine Vibe)
+        if (!this.humOscillator) {
+            this.humOscillator = this.ctx.createOscillator();
+            const humGain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+
+            this.humOscillator.type = 'triangle';
+            this.humOscillator.frequency.setValueAtTime(60, this.ctx.currentTime); // 60Hz hum
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(150, this.ctx.currentTime);
+            
+            humGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+            
+            // Evolving effect: subtle volume fluctuation
+            const lfo = this.ctx.createOscillator();
+            const lfoGain = this.ctx.createGain();
+            lfo.frequency.setValueAtTime(0.5, this.ctx.currentTime);
+            lfoGain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+            lfo.connect(lfoGain);
+            lfoGain.connect(humGain.gain);
+            lfo.start();
+
+            this.humOscillator.connect(filter);
+            filter.connect(humGain);
+            humGain.connect(this.ambienceGain);
+            this.humOscillator.start();
+        }
+    }
+
+    /**
+     * Starts random atmosphere sounds (distant wins, clinks).
+     * @private
+     */
+    _startAtmosphere() {
+        if (this.atmosphereTimer) return;
+
+        const playRandomClink = () => {
+            if (this.isMuted) {
+                this.atmosphereTimer = setTimeout(playRandomClink, 5000 + Math.random() * 10000);
+                return;
+            }
+
+            const sounds = ['winning', 'clap'];
+            const sound = sounds[Math.floor(Math.random() * sounds.length)];
+            
+            // Play a very quiet, distant version of the sound
+            const distGain = this.ctx.createGain();
+            distGain.gain.setValueAtTime(0.01 + Math.random() * 0.02, this.ctx.currentTime);
+            distGain.connect(this.ambienceGain);
+
+            this._playBuffer(sound, Math.random() * 2, 1, distGain);
+            
+            this.atmosphereTimer = setTimeout(playRandomClink, 3000 + Math.random() * 7000);
+        };
+
+        playRandomClink();
     }
 
     /**
@@ -124,14 +191,13 @@ class AudioManager {
 
         if (this.ctx && this.ctx.state === 'suspended') {
             await this.ctx.resume();
-            console.log('AudioContext successfully resumed on user interaction.');
         }
 
         this.isMuted = !this.isMuted;
         localStorage.setItem('slot_machine_muted', this.isMuted);
         this._updateVolume();
         
-        if (!this.isMuted && !this.backgroundSource) {
+        if (!this.isMuted) {
             this._startAmbience();
         }
         return this.isMuted;
@@ -156,25 +222,35 @@ class AudioManager {
     }
 
     /**
-     * Starts the continuous reel spin sound loop with decelerating playback rate.
+     * Starts the continuous reel spin sound sequence.
+     * Plays a start sound, then enters the drum loop.
      */
     async startSpinLoop() {
         await this._initContext();
-        if (this.isMuted || !this.buffers.drum) return;
+        if (this.isMuted) return;
 
+        // Reduce ambience during spin focus
         this.ambienceGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.1);
 
-        this.drumSource = this.ctx.createBufferSource();
-        this.drumSource.buffer = this.buffers.drum;
-        this.drumSource.loop = true;
-        this.drumSource.connect(this.masterGain);
-        
-        // Start at 1.0x speed
-        this.drumSource.playbackRate.setValueAtTime(1.0, this.ctx.currentTime);
-        // Gradually slow down to 0.3x over 1.5s
-        this.drumSource.playbackRate.linearRampToValueAtTime(0.3, this.ctx.currentTime + 1.5);
-        
-        this.drumSource.start();
+        // 1. Play the "Lever Pull/Start" sound
+        if (this.buffers.start) {
+            this._playBuffer('start', 0, 1.5);
+        }
+
+        // 2. Schedule the drum loop to start shortly after
+        setTimeout(() => {
+            if (this.isMuted || this.drumSource) return;
+
+            this.drumSource = this.ctx.createBufferSource();
+            this.drumSource.buffer = this.buffers.drum;
+            this.drumSource.loop = true;
+            this.drumSource.connect(this.masterGain);
+            
+            this.drumSource.playbackRate.setValueAtTime(1.2, this.ctx.currentTime);
+            this.drumSource.playbackRate.linearRampToValueAtTime(0.6, this.ctx.currentTime + 1.5);
+            
+            this.drumSource.start();
+        }, 300); // 300ms delay for the pull sound to feel distinct
     }
 
     /**
@@ -186,7 +262,7 @@ class AudioManager {
             this.drumSource = null;
         }
         if (this.ambienceGain) {
-            this.ambienceGain.gain.setTargetAtTime(0.25, this.ctx.currentTime, 0.5);
+            this.ambienceGain.gain.setTargetAtTime(0.2, this.ctx.currentTime, 0.5);
         }
     }
 

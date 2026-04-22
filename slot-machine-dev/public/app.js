@@ -142,32 +142,32 @@ class GameController {
 const config = {
     reels: [
         [
-            { symbol: '🍒', weight: 5 },
-            { symbol: '🍋', weight: 10 },
             { symbol: '7️⃣', weight: 1 },
-            { symbol: '💎', weight: 1 },
-            { symbol: '⚪', weight: 23 }
+            { symbol: '💎', weight: 2 },
+            { symbol: '🍒', weight: 8 },
+            { symbol: '🍋', weight: 12 },
+            { symbol: '⚪', weight: 7 }
         ],
         [
-            { symbol: '🍒', weight: 5 },
-            { symbol: '🍋', weight: 10 },
             { symbol: '7️⃣', weight: 1 },
-            { symbol: '💎', weight: 1 },
-            { symbol: '⚪', weight: 23 }
+            { symbol: '💎', weight: 2 },
+            { symbol: '🍒', weight: 8 },
+            { symbol: '🍋', weight: 12 },
+            { symbol: '⚪', weight: 7 }
         ],
         [
-            { symbol: '🍒', weight: 5 },
-            { symbol: '🍋', weight: 10 },
             { symbol: '7️⃣', weight: 1 },
-            { symbol: '💎', weight: 1 },
-            { symbol: '⚪', weight: 23 }
+            { symbol: '💎', weight: 2 },
+            { symbol: '🍒', weight: 8 },
+            { symbol: '🍋', weight: 12 },
+            { symbol: '⚪', weight: 7 }
         ]
     ],
     paytable: [
-        { symbols: ['7️⃣', '7️⃣', '7️⃣'], payout: 50 },
+        { symbols: ['7️⃣', '7️⃣', '7️⃣'], payout: 200 },
         { symbols: ['💎', '💎', '💎'], payout: 100 },
-        { symbols: ['🍒', '🍒', '🍒'], payout: 10 },
-        { symbols: ['🍋', '🍋', '🍋'], payout: 5 }
+        { symbols: ['🍒', '🍒', '🍒'], payout: 20 },
+        { symbols: ['🍋', '🍋', '🍋'], payout: 8 }
     ]
 };
 
@@ -183,8 +183,11 @@ const balanceEl = document.getElementById('current-balance');
 const spinBtn = document.getElementById('spin-button');
 const rescueBtn = document.getElementById('rescue-button');
 const statsBtn = document.getElementById('stats-button');
+const rulesBtn = document.getElementById('rules-button');
 const closeStatsBtn = document.getElementById('close-stats');
+const closeRulesBtn = document.getElementById('close-rules');
 const statsModal = document.getElementById('stats-modal');
+const rulesModal = document.getElementById('rules-modal');
 const betInput = document.getElementById('bet-amount');
 const messageEl = document.getElementById('message-display');
 const celebrationOverlay = document.getElementById('celebration-overlay');
@@ -203,8 +206,8 @@ function updateAudioButton() {
 }
 updateAudioButton();
 
-audioToggleBtn.addEventListener('click', () => {
-    audioManager.toggleMute();
+audioToggleBtn.addEventListener('click', async () => {
+    await audioManager.toggleMute();
     updateAudioButton();
 });
 
@@ -387,6 +390,14 @@ statsBtn.addEventListener('click', () => {
     statsModal.classList.remove('hidden');
 });
 
+rulesBtn.addEventListener('click', () => {
+    rulesModal.classList.remove('hidden');
+});
+
 closeStatsBtn.addEventListener('click', () => {
     statsModal.classList.add('hidden');
+});
+
+closeRulesBtn.addEventListener('click', () => {
+    rulesModal.classList.add('hidden');
 });

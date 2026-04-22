@@ -26,9 +26,27 @@ describe('AudioManager', () => {
             connect: jest.fn()
         };
 
+        const mockOscillator = {
+            type: 'sine',
+            frequency: { setValueAtTime: jest.fn() },
+            connect: jest.fn(),
+            start: jest.fn(),
+            stop: jest.fn()
+        };
+
+        const mockFilter = {
+            type: 'lowpass',
+            frequency: { setValueAtTime: jest.fn() },
+            connect: jest.fn()
+        };
+
         mockBufferSource = {
             buffer: null,
             loop: false,
+            playbackRate: {
+                setValueAtTime: jest.fn(),
+                linearRampToValueAtTime: jest.fn()
+            },
             connect: jest.fn(),
             start: jest.fn(),
             stop: jest.fn()
@@ -37,6 +55,8 @@ describe('AudioManager', () => {
         mockAudioContext = {
             createGain: jest.fn(() => mockGainNode),
             createBufferSource: jest.fn(() => mockBufferSource),
+            createOscillator: jest.fn(() => mockOscillator),
+            createBiquadFilter: jest.fn(() => mockFilter),
             decodeAudioData: jest.fn().mockResolvedValue(mockAudioBuffer),
             currentTime: 0,
             destination: {},
@@ -84,15 +104,17 @@ describe('AudioManager', () => {
         await audioManager.toggleMute(); // Enable
         audioManager.buffers = { start: mockAudioBuffer, drum: mockAudioBuffer };
         
+        // Clear previous calls from ambience setup
+        mockBufferSource.start.mockClear();
+        
         await audioManager.startSpinLoop();
         
         // start.mp3 playback call (offset 0, duration 1.5)
-        expect(mockAudioContext.createBufferSource).toHaveBeenCalled();
         expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, 1.5);
         
         // Advance 1s to start drum loop
         jest.advanceTimersByTime(1001);
-        expect(mockBufferSource.start).toHaveBeenCalledWith(0, 0, undefined);
+        expect(mockBufferSource.start).toHaveBeenCalledWith();
     });
 
     test('playWinSound should play segment 0-2s', async () => {
