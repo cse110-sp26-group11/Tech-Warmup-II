@@ -25,12 +25,12 @@ class AudioManager {
         this.buffers = {};
         /** @type {AudioBufferSourceNode|null} */
         this.backgroundSource = null;
-        /** @type {number|null} */
-        this.drumTimeout = null;
-        /** @type {number|null} */
-        this.startTimeout = null;
+        /** @type {AudioBufferSourceNode|null} */
+        this.drumSource = null;
         /** @type {boolean} */
         this.isInitialized = false;
+        /** @type {boolean} */
+        this.isInitializing = false;
     }
 
     /**
@@ -38,7 +38,8 @@ class AudioManager {
      * @private
      */
     async _initContext() {
-        if (this.isInitialized) return;
+        if (this.isInitialized || this.isInitializing) return;
+        this.isInitializing = true;
         
         try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -55,6 +56,8 @@ class AudioManager {
             this.isInitialized = true;
         } catch (error) {
             console.error('Failed to initialize AudioContext:', error);
+        } finally {
+            this.isInitializing = false;
         }
     }
 
@@ -65,7 +68,6 @@ class AudioManager {
     async _loadAssets() {
         const assets = {
             background: 'sounds/background.mp3',
-            start: 'sounds/start.mp3',
             drum: 'sounds/drum.wav',
             winning: 'sounds/winning.mp3',
             losing: 'sounds/losing.wav',
@@ -91,7 +93,7 @@ class AudioManager {
      * @private
      */
     _startAmbience() {
-        if (this.isMuted || !this.buffers.background) return;
+        if (this.isMuted || !this.buffers.background || this.backgroundSource) return;
         
         this.backgroundSource = this.ctx.createBufferSource();
         this.backgroundSource.buffer = this.buffers.background;
@@ -120,7 +122,6 @@ class AudioManager {
     async toggleMute() {
         await this._initContext();
 
-        // Explicitly resume the AudioContext to handle browser auto-play restrictions
         if (this.ctx && this.ctx.state === 'suspended') {
             await this.ctx.resume();
             console.log('AudioContext successfully resumed on user interaction.');
@@ -145,7 +146,7 @@ class AudioManager {
      * @private
      */
     _playBuffer(key, offset = 0, duration = undefined, output = this.masterGain) {
-        if (this.isMuted || !this.buffers[key]) return;
+        if (this.isMuted || !this.buffers[key]) return null;
         
         const source = this.ctx.createBufferSource();
         source.buffer = this.buffers[key];
@@ -155,44 +156,34 @@ class AudioManager {
     }
 
     /**
-     * Starts the spin sound sequence.
+     * Starts the continuous reel spin sound loop with decelerating playback rate.
      */
     async startSpinLoop() {
         await this._initContext();
-        if (this.isMuted) return;
+        if (this.isMuted || !this.buffers.drum) return;
 
-        // Duck ambience
         this.ambienceGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.1);
 
-        // Play start.mp3 (first 1.5s)
-        this._playBuffer('start', 0, 1.5);
-
-        // Start drum loop after 1s
-        let interval = 100;
-        const playDrum = () => {
-            this._playBuffer('drum');
-            if (this.drumTimeout) {
-                interval = Math.min(interval + 15, 300); // Slow down
-                this.drumTimeout = setTimeout(playDrum, interval);
-            }
-        };
-
-        this.startTimeout = setTimeout(() => {
-            this.drumTimeout = setTimeout(playDrum, 0);
-        }, 1000);
+        this.drumSource = this.ctx.createBufferSource();
+        this.drumSource.buffer = this.buffers.drum;
+        this.drumSource.loop = true;
+        this.drumSource.connect(this.masterGain);
+        
+        // Start at 1.0x speed
+        this.drumSource.playbackRate.setValueAtTime(1.0, this.ctx.currentTime);
+        // Gradually slow down to 0.3x over 1.5s
+        this.drumSource.playbackRate.linearRampToValueAtTime(0.3, this.ctx.currentTime + 1.5);
+        
+        this.drumSource.start();
     }
 
     /**
      * Stops the spin sequence and restores ambience.
      */
     stopSpinLoop() {
-        if (this.drumTimeout) {
-            clearTimeout(this.drumTimeout);
-            this.drumTimeout = null;
-        }
-        if (this.startTimeout) {
-            clearTimeout(this.startTimeout);
-            this.startTimeout = null;
+        if (this.drumSource) {
+            this.drumSource.stop();
+            this.drumSource = null;
         }
         if (this.ambienceGain) {
             this.ambienceGain.gain.setTargetAtTime(0.25, this.ctx.currentTime, 0.5);

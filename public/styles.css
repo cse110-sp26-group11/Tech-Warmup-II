@@ -8,6 +8,7 @@
 :root {
     --color-gold: #FFD700;
     --color-red: #D32F2F;
+    --color-green: #4CAF50;
     --color-blue: #1976D2;
     --color-dark-blue: #0D47A1;
     --color-white: #FFF;
@@ -109,6 +110,28 @@ main {
     border: 5px solid var(--color-gold);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgb(0 0 0 / 70%);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Win/Lose Flash Effects */
+.win-flash {
+    animation: win-pulse 0.5s ease 3;
+}
+
+@keyframes win-pulse {
+    0% { border-color: var(--color-gold); box-shadow: 0 0 10px var(--color-green); }
+    50% { border-color: var(--color-white); box-shadow: 0 0 40px var(--color-green); }
+    100% { border-color: var(--color-gold); box-shadow: 0 0 10px var(--color-green); }
+}
+
+.lose-flash {
+    animation: lose-pulse 0.5s ease 1;
+}
+
+@keyframes lose-pulse {
+    0% { background-color: var(--color-black); }
+    50% { background-color: #300; box-shadow: 0 0 30px var(--color-red); }
+    100% { background-color: var(--color-black); }
 }
 
 .reel {

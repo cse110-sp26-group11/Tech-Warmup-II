@@ -190,6 +190,7 @@ const messageEl = document.getElementById('message-display');
 const celebrationOverlay = document.getElementById('celebration-overlay');
 const confettiCanvas = document.getElementById('confetti-canvas');
 const audioToggleBtn = document.getElementById('audio-toggle');
+const reelContainer = document.getElementById('reel-container');
 const reels = [
     document.getElementById('reel-0'),
     document.getElementById('reel-1'),
@@ -203,7 +204,7 @@ function updateAudioButton() {
 updateAudioButton();
 
 audioToggleBtn.addEventListener('click', () => {
-    const isMuted = audioManager.toggleMute();
+    audioManager.toggleMute();
     updateAudioButton();
 });
 
@@ -285,26 +286,37 @@ function updateUI(state) {
             reels[i].textContent = symbol;
         });
 
+        const bet = parseInt(betInput.value);
+        reelContainer.classList.remove('win-flash', 'lose-flash');
+
         if (state.winAmount > 0) {
             messageEl.textContent = `WIN: ${state.winAmount} COINS!`;
-            messageEl.style.color = 'var(--color-gold)';
-            triggerCelebration();
+            messageEl.style.color = 'var(--color-green)';
+            reelContainer.classList.add('win-flash');
             
-            if (state.winAmount >= parseInt(betInput.value) * 10) {
+            if (state.winAmount >= bet * 10) {
+                triggerCelebration();
                 audioManager.playBigWinSound();
             } else {
                 audioManager.playWinSound();
             }
         } else {
             messageEl.textContent = 'Try Again!';
-            messageEl.style.color = 'var(--color-white)';
+            messageEl.style.color = 'var(--color-red)';
+            reelContainer.classList.add('lose-flash');
             audioManager.playLoseSound();
         }
 
         if (state.leveledUp) {
             messageEl.textContent += ` LEVEL UP! Reached Level ${state.level}!`;
+            triggerCelebration();
             audioManager.playBigWinSound();
         }
+
+        // Remove flash classes after animation finishes
+        setTimeout(() => {
+            reelContainer.classList.remove('win-flash', 'lose-flash');
+        }, 1500);
     }
 
     // Update Modal data if it exists in state
@@ -330,6 +342,7 @@ spinBtn.addEventListener('click', () => {
 
         spinBtn.disabled = true;
         messageEl.textContent = 'Spinning...';
+        messageEl.style.color = 'var(--color-white)';
         
         audioManager.startSpinLoop();
         reels.forEach(reel => reel.classList.add('spinning'));
