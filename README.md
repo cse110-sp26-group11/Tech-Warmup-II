@@ -25,24 +25,19 @@ Make sure you have the following installed on your machine:
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repository-url>
+   git clone https://github.com/cse110-sp26-group11/Tech-Warmup-II
    cd Tech-Warmup-II
    ```
-
 
 2. **Install dependencies:**
     ```bash
     npm install
     ```
 
-3. **Install playwright:**
+3. **Run the app:**
     ```bash
-    npm install playwright
-    ```
-
-4. **Run the app:**
-    ```bash
-    npm serve public
+    cd slot-machine-dev
+    npx serve public
     ```
 
 ## Testing
