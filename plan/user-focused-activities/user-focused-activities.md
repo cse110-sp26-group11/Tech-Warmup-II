@@ -69,6 +69,34 @@ Chuck passed his stats class and understands probabilites, and he has made peace
 
 ---
 
+## Persona 3: 
+
+**Name:** Marie the Mom
+**Age:** 35
+**Job:** In between jobs / Stay-at-home mom        
+**Device:** iPhone 13      
+**Likes:** Shorter play sessions with no money involved        
+
+### Background
+Middle class with a family. Spends a lot of time taking care of her 2 elementary-school age sons, whether it be preparing lunch, picking them up, or helping with homework. She considers herself a stay-at-home mom and enjoys community service volunteering (food drives, park cleanup, and more), though she’s considering getting into a business-related job or even pursuing another college degree.
+
+### Goals
+- Pass mundane downtime alone with something fun on her phone to destress. For example, while waiting for kids in the car, waiting at the DMV, or when nobody’s home and all the chores are done. Not concerned about winning big, but just getting some quick dopamine from her phone while she’s bored.
+
+### Likes
+- Free games
+- Quick dopamine
+
+### Dislikes
+- Boredom when she's away from family
+- Losing a lot of money
+
+### Motivations
+- Having something to do in her downtime
+- Feeling rewarded in a low-stakes game
+
+---
+
 # User Stories
 
 ## Gameplay
