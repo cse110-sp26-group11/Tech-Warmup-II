@@ -169,3 +169,6 @@ As a frequent advanced player, I want special events and limited time missions s
 
 ### 8. Marie
 As Marie the Mom, I want to play a casual free game on my phone, so that I can pass the time waiting to pick up the kids.
+
+### 9. Billy
+As Billy the Boy, I want to find games that make me feel like my favorite YouTubers, so I can brag to my friends.
