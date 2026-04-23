@@ -69,13 +69,13 @@ Chuck passed his stats class and understands probabilites, and he has made peace
 
 ---
 
-## Persona 3: 
+## Persona 3: Out of boredom
 
-**Name:** Marie the Mom
-**Age:** 35
+**Name:** Marie the Mom      
+**Age:** 35     
 **Job:** In between jobs / Stay-at-home mom        
-**Device:** iPhone 13      
-**Likes:** Shorter play sessions with no money involved        
+**Device** iPhone 13      
+**Likes:** Shorter play sessions with no money involved  
 
 ### Background
 Middle class with a family. Spends a lot of time taking care of her 2 elementary-school age sons, whether it be preparing lunch, picking them up, or helping with homework. She considers herself a stay-at-home mom and enjoys community service volunteering (food drives, park cleanup, and more), though she’s considering getting into a business-related job or even pursuing another college degree.
