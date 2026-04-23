@@ -33,6 +33,7 @@ While AI was helpful, it introduced several challenges:
 - Generated code sometimes had logical errors despite compiling correctly
 - Edge cases were frequently missing
 - Code quality and structure were inconsistent
+- Hard to clean junk files, since each iteration generates lots of files, and not sure which files can be removed.
 
 Additionally, we encountered traditional software issues such as:
 > “Works on my machine but not others”
