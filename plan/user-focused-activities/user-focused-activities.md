@@ -135,3 +135,8 @@ As a strategic advanced player, I want access to the odds and knowledge of payou
 As a frequent advanced player, I want special events and limited time missions so I feel a sense of urgency and progression.
 
 ---
+
+## Persona-specific
+
+### 8. Marie
+As Marie the Mom, I want to play a casual free game on my phone, so that I can pass the time waiting to pick up the kids.
