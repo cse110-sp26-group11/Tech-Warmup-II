@@ -145,4 +145,5 @@ Research collected and synthesized by **Siddharth** from the team's Miro board r
 | Yuting | Researched app design and summarized key findings on visual themes, engagement psychology, sound design, and essential slot-machine terminology |
 | Ethan | Researched slot machine game special features/mechanics |
 | Ray | Sourced audio, tested gameplay, identified bugs, and designed dual-mode architecture with rescue mechanics.|
+| Siddharth | contribute on discussing visual, and sound effects necessary for the update slot machine. Added part of user experience. Keeping users engaged.|
 | [Name] | [What you researched] |
