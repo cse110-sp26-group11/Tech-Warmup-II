@@ -97,6 +97,35 @@ Middle class with a family. Spends a lot of time taking care of her 2 elementary
 
 ---
 
+## Persona 4: Aspiring YouTuber
+
+**Name:** Billy the Boy      
+**Age:** 10     
+**Job:** None        
+**Device** iPad Pro      
+**Likes:** Games to record and make videos of  
+
+### Background
+10 year old kid in California who is enrolled in public middle school. He was raised on technology and cocomelon. He doesn’t find school that interesting and would rather play games on his tablet. He has been fixated on casinos lately and really wants to try a slot machine, but can’t due to his age. Wants to be a YouTuber one day.
+
+### Goals
+- Be able to try a slot machine to satisfy his curiosity and feel like a grown up. Wants a game to play when he’s bored from watching videos, and pretends to be a YouTuber when he’s playing games.
+
+### Likes
+- iPad games
+- Watching gaming videos on YouTube
+
+### Dislikes
+- Homework
+- Boredom before bedtime
+
+### Motivations
+- Become a YouTuber one day
+- Brag to friends at school
+
+
+---
+
 # User Stories
 
 ## Gameplay
