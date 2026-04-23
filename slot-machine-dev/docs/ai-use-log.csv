@@ -20,7 +20,7 @@ Write comprehensive JSDocs with explicit type annotations for every function.
 Ensure the code is modular, clean, and ready to pass strict ESLint checks.
 
 Please output the code for these two files. Do not include any UI or reel logic yet; focus strictly on a pure, secure RNG utility.",RNG module successfully implemented and tests work.
-,2,"Continue with phase 2, develop math engine for spinning mechanism in the game","We are continuing with Phase 2: The Math Engine. The RNG utility (src/utils/rng.js) is complete and passing tests.
+gemini-3-flash-preview,2,"Continue with phase 2, develop math engine for spinning mechanism in the game","We are continuing with Phase 2: The Math Engine. The RNG utility (src/utils/rng.js) is complete and passing tests.
 
 Now, we need to build the core reel mechanics. Please generate the following files using a Test-Driven Development approach:
 
@@ -41,7 +41,7 @@ Include robust error handling (e.g., throwing an error if the weight array is em
 Write comprehensive JSDocs with explicit type annotations.
 
 Please output the code for these two files.",Math reels.js successfully created with tests and runs 
-,3,Finish phase 2 of development of the backend. Tying together the reels and the math ,"Now, we need to build the core game engine that ties the reels together, evaluates wins, and proves our math. Please generate the following three files using our TDD and clean code standards:
+gemini-3-flash-preview,3,Finish phase 2 of development of the backend. Tying together the reels and the math ,"Now, we need to build the core game engine that ties the reels together, evaluates wins, and proves our math. Please generate the following three files using our TDD and clean code standards:
 
 tests/engine.test.js: A Jest test suite that verifies the engine correctly evaluates winning and losing spins based on a provided paytable, and accurately calculates the payout.
 
@@ -62,7 +62,7 @@ Write comprehensive JSDocs with explicit type annotations for every function and
 Ensure the code is completely modular and ready to pass strict ESLint checks.
 
 Please output the code for these three files. Do not generate any frontend or UI code.",Successfully created engine.js file and tests as well as a simulation script to handle 100000 iterations and check the odds
-,4,Moving on to phase 3 of development. Implementing gamification & retention systems to satisfy our user pesronas,"We are moving on to Phase 3: Gamification & Retention Systems. Phase 2 is completely finished and passing tests.
+gemini-3-flash-preview,4,Moving on to phase 3 of development. Implementing gamification & retention systems to satisfy our user pesronas,"We are moving on to Phase 3: Gamification & Retention Systems. Phase 2 is completely finished and passing tests.
 
 We need to build the in-game economy and player retention mechanics to satisfy our personas (Marie and Gary). Please generate the following files using our strict Test-Driven Development approach:
 
@@ -83,7 +83,7 @@ Implement robust error handling (e.g., throwing errors for negative deductions o
 Ensure the code adheres to DRY principles and is ready to pass strict ESLint checks.
 
 Please output the code for these four files.",Successfully added a virtual wallet and daily login features
-,5,Continuing with phase 3. We need to finalize the other meta systems and tie in the backend with these systems,"We are finishing up Phase 3: Gamification & Retention Systems. Our Wallet and DailyLogin modules are complete and passing tests.
+gemini-3-flash-preview,5,Continuing with phase 3. We need to finalize the other meta systems and tie in the backend with these systems,"We are finishing up Phase 3: Gamification & Retention Systems. Our Wallet and DailyLogin modules are complete and passing tests.
 
 Now, we need to finalize the meta-systems and tie the backend together. Please generate the following files using our strict Test-Driven Development approach:
 
@@ -114,7 +114,7 @@ Implement robust error handling.
 Ensure the code adheres to DRY principles, uses Dependency Injection where appropriate (e.g., passing Wallet into GameController), and is ready to pass ESLint.
 
 Please output the code for these four files",Successfully added experience and leveling classes along with tests for them
-,6,Phase 4: Added initial frontend with html and css,"We will also introduce Playwright for End-to-End (E2E) testing to stick to your TDD approach.
+gemini-3-flash-preview,6,Phase 4: Added initial frontend with html and css,"We will also introduce Playwright for End-to-End (E2E) testing to stick to your TDD approach.
 
 Copy and paste this next prompt into your Gemini CLI:
 
@@ -141,7 +141,7 @@ Ensure the CSS is clean, modular, and ready to pass Stylelint.
 Document any complex frontend logic with JSDocs.
 
 Please output the code for these four files.",Initial frontend loads in browser and plays
-,7,Add visual effects and animations to make the game more interesting,"We are moving into Phase 5: Edge Cases & Meta-System UI. Our core game, UI animations, and economy are working perfectly and passing all linters.
+gemini-3-flash-preview,7,Add visual effects and animations to make the game more interesting,"We are moving into Phase 5: Edge Cases & Meta-System UI. Our core game, UI animations, and economy are working perfectly and passing all linters.
 
 We need to satisfy a missing user story: providing a way for players to regain currency for free if they run out, ensuring they never have to spend real money. Please implement a 'Bankruptcy Rescue' feature using our TDD approach:
 
@@ -162,8 +162,8 @@ Ensure the code adheres to DRY principles and does not break any existing tests 
 Ensure the new JS passes ESLint.
 
 Please output the updated/new code for these four files.",Implemented a feature when you run out of money that it will load your account with more. Level up feature is weird because it gives you more money based on how much you spend once you get to a bet that is too high it crashes.
-,8,Bug fix,There is a specific error when the bet gets too large that the slot machine will not give an output. Fix this.,Implemented fix to this now when tested at high numbers we still get output
-,9,Player tracking,"That is fantastic! Your application is now handling edge cases and ensuring players never get stuck, completely satisfying Gary’s requirement to play without real money while still experiencing the thrill of the game.
+gemini-3-flash-preview,8,Bug fix,There is a specific error when the bet gets too large that the slot machine will not give an output. Fix this.,Implemented fix to this now when tested at high numbers we still get output
+gemini-3-flash-preview,9,Player tracking,"That is fantastic! Your application is now handling edge cases and ensuring players never get stuck, completely satisfying Gary’s requirement to play without real money while still experiencing the thrill of the game.
 
 We are entering the home stretch. Looking back at our original personas.md and whiteboard notes, there is one major requirement left for Billy the Boy: he wants to be able to ""brag to his friends"" and feel like a YouTuber.
 
@@ -192,11 +192,11 @@ Ensure the new UI logic does not break the existing spin animations or bankruptc
 Ensure all code adheres to DRY principles.
 
 Please output the updated/new code for these files.",Implemented status and win tracker. Works and counts the total
-,10,Missing ESLint configuration file after installing ESLint,"""I'm working on a vanilla JavaScript slot machine project. ESLint is installed but I need a configuration file. Please generate a complete .eslintrc.js file with browser and Jest environments, extend eslint:recommended, and enforce rules like no-var and eqeqeq.""",AI generated .eslintrc.js with proper env settings and rules. File created in project root.
-,11,ESLint config file conflict causing ERR_PACKAGE_PATH_NOT_EXPORTED,"""My project has both .eslintrc.js and eslint.config.mjs. Running npm run lint gives ERR_PACKAGE_PATH_NOT_EXPORTED. ESLint version is 8.57.1. How do I fix this?""","Gemini CLI auto-diagnosed: deleted conflicting eslint.config.mjs, merged missing rules (semi, prefer-const) into .eslintrc.js. ESLint now runs successfully. 14 max-len errors remain to be fixed."
-,12,Fix 14 max-len ESLint errors across 7 files,"I have fixed all 14 max-len violations across the specified files. I've verified this by running a grep search for any remaining lines exceeding 100 characters, which returned no results. Summary of changes: - tests/leveling.test.js: Broke long expect statement on line 78. - tests/rescue.test.js: Broke long expect statement on line 24. - tests/dailyLogin.test.js: Broke long expect statement on line 70. - tests/engine.test.js: Broke long expect statements on lines 36 and 40. - public/app.js: Broke long if statement on line 112 and multi-line reel configurations on lines 142-144. - src/meta/rescue.js: Broke long error message on line 40. - src/utils/rng.js: Broke long JSDoc comments on lines 3, 11, and 14.",Gemini CLI fixed line 43 in ui.spec.js. All max-len errors now resolved. Lint passes 0 errors.
-,13,Fix remaining max-len error in ui.spec.js line 43,"I still have one remaining max-len error in tests/e2e/ui.spec.js line 43 (103 characters). Please read the file, find line 43, and break it to stay under 100 characters. Keep the code functionally identical.","Gemini CLI read file, identified line 43, and broke the expect statement across two lines. ESLint now passes with 0 errors."
-,14,Add sound effects system for Gary persona,"I need to add a sound effect system to my vanilla JavaScript slot machine game.
+gemini-3-flash-preview,10,Missing ESLint configuration file after installing ESLint,"""I'm working on a vanilla JavaScript slot machine project. ESLint is installed but I need a configuration file. Please generate a complete .eslintrc.js file with browser and Jest environments, extend eslint:recommended, and enforce rules like no-var and eqeqeq.""",AI generated .eslintrc.js with proper env settings and rules. File created in project root.
+gemini-3-flash-preview,11,ESLint config file conflict causing ERR_PACKAGE_PATH_NOT_EXPORTED,"""My project has both .eslintrc.js and eslint.config.mjs. Running npm run lint gives ERR_PACKAGE_PATH_NOT_EXPORTED. ESLint version is 8.57.1. How do I fix this?""","Gemini CLI auto-diagnosed: deleted conflicting eslint.config.mjs, merged missing rules (semi, prefer-const) into .eslintrc.js. ESLint now runs successfully. 14 max-len errors remain to be fixed."
+gemini-3-flash-preview,12,Fix 14 max-len ESLint errors across 7 files,"I have fixed all 14 max-len violations across the specified files. I've verified this by running a grep search for any remaining lines exceeding 100 characters, which returned no results. Summary of changes: - tests/leveling.test.js: Broke long expect statement on line 78. - tests/rescue.test.js: Broke long expect statement on line 24. - tests/dailyLogin.test.js: Broke long expect statement on line 70. - tests/engine.test.js: Broke long expect statements on lines 36 and 40. - public/app.js: Broke long if statement on line 112 and multi-line reel configurations on lines 142-144. - src/meta/rescue.js: Broke long error message on line 40. - src/utils/rng.js: Broke long JSDoc comments on lines 3, 11, and 14.",Gemini CLI fixed line 43 in ui.spec.js. All max-len errors now resolved. Lint passes 0 errors.
+gemini-3-flash-preview,13,Fix remaining max-len error in ui.spec.js line 43,"I still have one remaining max-len error in tests/e2e/ui.spec.js line 43 (103 characters). Please read the file, find line 43, and break it to stay under 100 characters. Keep the code functionally identical.","Gemini CLI read file, identified line 43, and broke the expect statement across two lines. ESLint now passes with 0 errors."
+gemini-3-flash-preview,14,Add sound effects system for Gary persona,"I need to add a sound effect system to my vanilla JavaScript slot machine game.
 
 Please generate the code for a new file `src/utils/audio.js`:
 
@@ -215,7 +215,7 @@ Also provide the modifications needed for:
 4. tests/audio.test.js - unit tests for AudioManager
 
 Output each file's complete code or the specific changes needed.","Gemini CLI created audio.js with AudioManager class (Web Audio API), added mute toggle with localStorage, integrated spin/win/bigwin/lose sounds into app.js, styled toggle button. All 6 tests pass. Lint 0 errors."
-,15,Enhance sound system with continuous spin loop and background ambience,"The sound effects system works, but the user experience is lacking. Currently, sounds are only short beeps on click and result. This doesn't create the immersive casino atmosphere Gary wants.
+gemini-3-flash-preview,15,Enhance sound system with continuous spin loop and background ambience,"The sound effects system works, but the user experience is lacking. Currently, sounds are only short beeps on click and result. This doesn't create the immersive casino atmosphere Gary wants.
 
 Please enhance the AudioManager to include:
 
@@ -236,7 +236,7 @@ Please enhance the AudioManager to include:
    - Add tests for startSpinLoop() and stopSpinLoop()
 
 CRITICAL: Maintain Web Audio API usage, JSDoc, and max-len 100.","Gemini CLI added startSpinLoop/stopSpinLoop methods with gradual slowdown, and background ambience track. Tests updated and pass. But the effect is not ideal."
-,16,Background ambience too ominous/dark,"The background ambience sound is too ominous/dark. It needs to be brighter and more cheerful to match the fun, casual casino atmosphere.
+gemini-3-flash-preview,16,Background ambience too ominous/dark,"The background ambience sound is too ominous/dark. It needs to be brighter and more cheerful to match the fun, casual casino atmosphere.
 
 Please update the AudioManager's background ambience in src/utils/audio.js:
 - Change the oscillator type from whatever it is now to a brighter waveform (triangle or sine)
@@ -245,7 +245,7 @@ Please update the AudioManager's background ambience in src/utils/audio.js:
 - Keep the volume low so it's pleasant but not intrusive
 
 Update tests/audio.test.js if needed. Maintain all existing functionality (ducking during spin, mute toggle, etc.).","Gemini CLI replaced 60Hz sine wave with 220Hz + 277.18Hz triangle oscillators (major third interval). Tests pass, lint 0 errors. But the effect is not ideal."
-,17,Redesign background ambience to be rich and evolving,"The background ambience is still too monotonous - it's just a single chord repeating. A real casino atmosphere has rich, evolving soundscapes with subtle variations, occasional chimes, and a lively but relaxed feel.
+gemini-3-flash-preview,17,Redesign background ambience to be rich and evolving,"The background ambience is still too monotonous - it's just a single chord repeating. A real casino atmosphere has rich, evolving soundscapes with subtle variations, occasional chimes, and a lively but relaxed feel.
 
 Please completely redesign the background ambience in src/utils/audio.js to create an immersive casino atmosphere:
 
@@ -277,7 +277,7 @@ Requirements:
 If Web Audio API limitations make this too complex, provide a simplified version with at least: evolving pad + occasional chimes at random intervals.
 
 This should feel like a lively casino floor, not a single repeating note.","Gemini CLI created 3-layer soundscape: detuned oscillators with LFO modulation, filtered noise murmur, and random pentatonic chimes. 7 tests pass.But the effect is not ideal."
-,18,Replace Web Audio synthesis with custom MP3/WAV files,"I have prepared custom audio files in the `sounds/` folder. I need to replace the Web Audio API synthesized sounds with these MP3/WAV files while maintaining all existing functionality (mute toggle, volume control, etc.).
+gemini-3-flash-preview,18,Replace Web Audio synthesis with custom MP3/WAV files,"I have prepared custom audio files in the `sounds/` folder. I need to replace the Web Audio API synthesized sounds with these MP3/WAV files while maintaining all existing functionality (mute toggle, volume control, etc.).
 
 **Audio Files Available:**
 - `background.mp3` (2 min) - Loop for idle background
@@ -323,7 +323,7 @@ This should feel like a lively casino floor, not a single repeating note.","Gemi
    - Update tests accordingly
 
 Please generate the complete revised `src/utils/audio.js` and any necessary changes to other files.","Gemini CLI rewrote audio.js to use MP3/WAV files with precise timing control (start.mp3 first 1.5s, drum.wav loop with slowdown, conditional win/lose sounds). But the updated music is not shown on the website"
-,19,Fix AudioContext suspended state - no sound despite files loading,"The audio files load correctly (tests pass), but no sound plays in the browser even after clicking the existing 🔊 mute toggle button. The AudioContext is likely staying in 'suspended' state.
+gemini-3-flash-preview,19,Fix AudioContext suspended state - no sound despite files loading,"The audio files load correctly (tests pass), but no sound plays in the browser even after clicking the existing 🔊 mute toggle button. The AudioContext is likely staying in 'suspended' state.
 
 Please fix src/utils/audio.js:
 
@@ -333,7 +333,7 @@ Please fix src/utils/audio.js:
 4. Keep all existing mute toggle and localStorage functionality intact
 
 The button already exists - just make it actually wake up the AudioContext.","Gemini CLI added context.resume() call in toggleMute method. Sound now plays on first user interaction. After on, I found the error is because of my placement of the ""sound"" folder in parallel with ""public"" folder instead of inside the ""public"" folder"
-,20,Fix audio timing issues and add win/lose visual effects,"I have several issues with the current audio implementation that need fixing, plus I need visual feedback for wins/losses.
+gemini-3-flash-preview,20,Fix audio timing issues and add win/lose visual effects,"I have several issues with the current audio implementation that need fixing, plus I need visual feedback for wins/losses.
 
 **Audio Issues to Fix:**
 1. **Remove `start.mp3` entirely** - it adds too much delay. Spin should go straight to `drum.wav`.
@@ -359,7 +359,7 @@ The button already exists - just make it actually wake up the AudioContext.","Ge
 - `public/styles.css` - Add CSS classes for win/lose animations
 
 Maintain all existing functionality (mute toggle, localStorage, JSDoc, max-len 100).","Gemini CLI removed start.mp3, implemented playbackRate deceleration, fixed win/lose sound logic, added win-flash/lose-flash CSS animations and confetti for big wins. But the winning sound did not apper, and the drum sound need to be revised so that it starts with fast speed with more time and then ends with low speed."
-,21,"Fix drum timing, win/lose sound logic, and result display hierarchy","I still have several issues with the audio-visual feedback that need precise fixes.
+gemini-3-flash-preview,21,"Fix drum timing, win/lose sound logic, and result display hierarchy","I still have several issues with the audio-visual feedback that need precise fixes.
 
 **1. Drum Loop Timing (Critical):**
 The reel spin should last exactly 6 seconds total:
